@@ -1,0 +1,449 @@
+/* ===================== 全局设置 ===================== */
+:root {
+    --bg-color: #FFFDF5;
+    --primary-green: #B5EAD7;
+    --accent-yellow: #FFDAC1;
+    --light-yellow-text: #FFF9C4;
+    --text-color: #4A4A4A;
+    --border-color: #2c2c2c;
+    --main-font: "ZCOOL KuaiLe", cursive, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--main-font); background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; height: 100vh; }
+#bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+/* ===================== 波普积木 ===================== */
+.block-style {
+    background: #fff; border: 3px solid var(--border-color); border-radius: 12px;
+    box-shadow: 5px 5px 0px var(--border-color); transition: 0.2s;
+}
+.block-style:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px var(--border-color); }
+
+/* ===================== 侧边栏 ===================== */
+.sidebar { position: fixed; left: 30px; top: 30px; width: 230px; z-index: 9999 !important; }
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.logo-text { font-size: 1.6rem; font-weight: bold; color: var(--border-color); text-shadow: 2px 2px 0 #fff; }
+.nav-btn-exit {
+    background: #FF6B6B; color: #fff; border: 3px solid var(--border-color);
+    border-radius: 8px; padding: 5px 12px; font-family: inherit; font-weight: bold;
+    box-shadow: 4px 4px 0px var(--border-color); cursor: pointer;
+}
+.nav-btn-exit:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--border-color); }
+.menu-item {
+    margin-bottom: 15px; padding: 12px 18px; background: #fff; border: 3px solid var(--border-color);
+    border-radius: 10px; box-shadow: 4px 4px 0px var(--border-color); cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem;
+}
+.grade-7 { background-color: #ffecd2; } .grade-8 { background-color: #fcb69f; } .grade-9 { background-color: #a1c4fd; }
+.active-mode { background: var(--accent-yellow) !important; transform: translate(2px, 2px) !important; box-shadow: 1px 1px 0px var(--border-color) !important; }
+.submenu { margin-left: 10px; margin-top: 8px; border-left: 3px dashed #ccc; padding-left: 10px; }
+.submenu-item { padding: 8px; cursor: pointer; color: #555; border-radius: 5px; transition: 0.2s; }
+.submenu-item:hover { background: var(--primary-green); color: #fff; font-weight: bold; border: 2px solid var(--border-color); }
+
+/* ===================== 主页 & 打字机 (修复错位) ===================== */
+.main-content { padding: 20px; height: 100vh; overflow-y: auto; }
+.hero-section { height: 40vh; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+.typewriter-container {
+    padding: 25px 60px; background-color: var(--primary-green);
+    border: 3px solid var(--border-color); border-radius: 15px;
+    box-shadow: 8px 8px 0px rgba(0,0,0,0.15); display: flex; transform: rotate(-1deg); min-width: 450px;
+}
+#typewriter-text { font-size: 3rem; color: var(--light-yellow-text); text-shadow: 3px 3px 0px var(--border-color); font-weight: 900; }
+.cursor { font-size: 3rem; color: var(--light-yellow-text); text-shadow: 3px 3px 0px var(--border-color); animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% {opacity: 1} 50% {opacity: 0} }
+
+/* 修复首页书架发癫问题：增加间距，控制高度 */
+.books-grid { 
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 60px; 
+    padding: 0 50px 100px; max-width: 1400px; margin: 0 auto; 
+}
+.book-card-wrapper { 
+    display: flex; flex-direction: column; align-items: center; cursor: pointer; 
+    width: 180px; transition: 0.3s; 
+}
+.book-card-wrapper:hover { transform: translateY(-10px); }
+.book-cover { 
+    width: 100%; aspect-ratio: 2/3; background: #fff; 
+    border: 3px solid var(--border-color); border-radius: 8px; 
+    box-shadow: 6px 6px 0px var(--border-color); overflow: hidden; 
+    display: flex; align-items: center; justify-content: center;
+}
+.book-cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-title { 
+    margin-top: -15px; font-weight: bold; background: #fff; padding: 6px 15px; 
+    border-radius: 20px; border: 2px solid var(--border-color); 
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.1); z-index: 2; 
+}
+.gray-cover { font-size: 3rem; color: #ccc; background: #eee; }
+
+/* ===================== 阅读器 (修复输入框焦点) ===================== */
+.reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 100; overflow-y: auto; display: none; }
+.content-body { margin-left: 260px; padding: 40px; max-width: 1000px; width: calc(100% - 260px); display: flex; flex-direction: column; gap: 40px; align-items: center; padding-bottom: 100px; }
+
+.sheet-card {
+    width: 100%; background: #fff; padding: 50px 70px;
+    border: 3px solid var(--border-color); border-radius: 8px;
+    box-shadow: 8px 8px 0px rgba(0,0,0,0.1);
+    background-image: linear-gradient(#f1f1f1 1px, transparent 1px); background-size: 100% 45px; position: relative;
+}
+.sheet-card::before {
+    content: ''; position: absolute; top: -15px; right: 40px; width: 25px; height: 50px;
+    background: var(--primary-green); border: 2px solid var(--border-color); border-radius: 12px;
+    transform: rotate(15deg); z-index: 1; box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+.sheet-title { text-align: center; font-size: 2rem; margin-bottom: 40px; background: #fff; padding: 10px 30px; border: 3px dashed var(--border-color); border-radius: 30px; transform: rotate(-1deg); display: inline-block; }
+.question-line { font-size: 1.3rem; line-height: 45px; color: #555; }
+.cloze-slot { display: inline-block; min-width: 80px; border-bottom: 2px dashed #888; color: transparent; cursor: pointer; text-align: center; padding: 0 5px; }
+.cloze-slot:hover { border-bottom-color: var(--primary-green); background-color: rgba(0,0,0,0.05); }
+.cloze-slot.revealed { color: #fff; background: #FF6B6B; border: 2px solid var(--border-color); border-radius: 6px; box-shadow: 3px 3px 0 var(--border-color); padding: 0 10px; animation: pop 0.4s forwards; display: inline-block; }
+@keyframes pop { 0% {transform: scale(0.5);opacity:0;} 60% {transform: scale(1.2);} 100% {transform: scale(1);opacity:1;} }
+
+/* ===================== 思维导图 ===================== */
+.mindmap-body { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFFDF5; background-image: radial-gradient(#ddd 1px, transparent 1px); background-size: 20px 20px; z-index: 200; overflow: hidden; cursor: grab; display: none; }
+.mindmap-body:active { cursor: grabbing; }
+#mindmap-viewport, #mindmap-world { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+#mindmap-lines { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; z-index: 1; pointer-events: none; }
+.connection-line { fill: none; stroke: #555; stroke-width: 2px; transition: d 0.3s; }
+.mind-node { position: absolute; padding: 10px 20px; background: #fff; border: none; border-radius: 10px; box-shadow: 5px 5px 0 #2c2c2c; font-size: 1rem; cursor: pointer; transform: translate(0, -50%); transition: 0.2s; white-space: nowrap; }
+.mind-node:hover { background: var(--primary-green); transform: translate(0, -55%) scale(1.05); z-index: 100; box-shadow: 8px 8px 0 #2c2c2c; }
+.mind-node.root-node { background: var(--accent-yellow); font-size: 1.5rem; padding: 18px 36px; border: 2px solid #2c2c2c; }
+.zoom-controls { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+.zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: #fff; border: 3px solid #2c2c2c; font-size: 1.5rem; cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
+
+/* ===================== 综合试卷 (修复输入框点击) ===================== */
+.test-paper-header { text-align: center; margin-bottom: 50px; border-bottom: 3px double #2c2c2c; padding-bottom: 20px; }
+.test-paper-header h1 { font-size: 2.5rem; color: #2c2c2c; margin-bottom: 15px; }
+.test-info { font-size: 1.2rem; color: #555; font-weight: bold; }
+.test-score-panel { font-size: 2rem; color: #d9534f; margin-top: 15px; font-weight: 900; }
+/* ===================== 修复：试卷区域字体优化 ===================== */
+/* 强制试卷内容使用清晰字体，不再用手绘字体 */
+.test-section, .quiz-card {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif; 
+}
+
+.test-q-title, .quiz-question {
+    font-size: 1.15rem;
+    font-weight: bold;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.test-mc-label, .quiz-option {
+    font-family: Arial, "Microsoft YaHei", sans-serif; /* 确保ABCD字母清晰 */
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* 标题保持波普风，内容回归严肃 */
+.section-title {
+    font-family: "ZCOOL KuaiLe", cursive; 
+}
+
+/* ===================== 新增：曼波整蛊弹窗 (Mambo Overlay) ===================== */
+#mambo-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); /* 深色背景 */
+    z-index: 10000; /* 最高层级 */
+    display: none; /* 默认隐藏 */
+    flex-direction: column; align-items: center; justify-content: center;
+}
+
+.mambo-content {
+    background: #fff;
+    padding: 30px;
+    border: 5px solid #2c2c2c;
+    border-radius: 20px;
+    box-shadow: 10px 10px 0 #FF6B6B;
+    text-align: center;
+    max-width: 500px;
+    animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mambo-img {
+    width: 200px; height: 200px; 
+    object-fit: cover; 
+    border: 3px solid #2c2c2c;
+    margin-bottom: 20px;
+    border-radius: 10px;
+}
+
+.mambo-text {
+    font-family: "ZCOOL KuaiLe", cursive;
+    font-size: 1.8rem;
+    color: #2c2c2c;
+    margin-bottom: 30px;
+}
+
+.mambo-btn-group {
+    display: flex; justify-content: center; gap: 30px;
+}
+
+.mambo-btn {
+    padding: 10px 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: 3px solid #2c2c2c;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #2c2c2c;
+    transition: 0.2s;
+    font-family: "ZCOOL KuaiLe", cursive;
+}
+
+.btn-yes { background: #B5EAD7; color: #2c2c2c; }
+.btn-no { background: #FF6B6B; color: #fff; }
+
+.btn-no:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #2c2c2c; }
+/* 注意：btn-yes 没有 hover 效果，因为它会消失 */
+.section-title { font-size: 1.5rem; border-left: 5px solid #FF6B6B; padding-left: 15px; margin-bottom: 10px; }
+.test-q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+.test-q-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; line-height: 1.8; }
+.test-mc-label { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 4px; }
+.test-mc-label:hover { background: #f0f0f0; }
+.test-mc-label input { margin-right: 10px; transform: scale(1.2); }
+
+/* --- 关键修复：确保输入框层级高，可点击 --- */
+.test-cloze-input { 
+    border: none; border-bottom: 2px solid #2c2c2c; background: #fffdf5; 
+    width: 150px; padding: 2px 5px; text-align: center; font-size: 1rem; color: #333;
+    position: relative; z-index: 10; font-family: inherit;
+}
+.test-cloze-input:focus { border-bottom-color: #FF6B6B; outline: none; background: #fff; }
+
+.analysis-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-top: 10px; font-size: 0.95rem; color: #555; display: none; line-height: 1.6; }
+.correct-answer { color: #28a745; font-weight: bold; margin-left: 10px; }
+/* ===================== 🚑 紧急修复：选择题样式 & 答案隐藏 ===================== */
+
+/* 1. 修复卡片：加回波普积木风 (白底、黑框、硬阴影) */
+.quiz-card {
+    background-color: #fff !important; /* 强制白底 */
+    border: 3px solid #2c2c2c !important; /* 强制黑框 */
+    border-radius: 12px;
+    box-shadow: 6px 6px 0px #2c2c2c !important; /* 强制阴影 */
+    padding: 30px;
+    margin-bottom: 35px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 2. 修复题目文字 */
+.quiz-question {
+    font-family: "Microsoft YaHei", sans-serif; /* 题目用黑体，清晰 */
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+/* 3. 修复选项按钮：悬浮效果 */
+.quiz-option {
+    background-color: #f9f9f9;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.1s;
+    font-size: 1rem;
+    color: #555;
+    font-family: Arial, sans-serif; /* 选项字母用无衬线 */
+}
+
+.quiz-option:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+    border-color: #2c2c2c;
+    color: #000;
+    background-color: #fff;
+}
+
+/* 4. 选中状态：绿对红错 */
+.quiz-option.correct {
+    background-color: #B5EAD7 !important; /* 浅绿 */
+    border-color: #2c2c2c !important;
+    color: #000 !important;
+    font-weight: bold;
+    box-shadow: 2px 2px 0 #2c2c2c;
+}
+
+.quiz-option.wrong {
+    background-color: #FF6B6B !important; /* 浅红 */
+    border-color: #2c2c2c !important;
+    color: #fff !important;
+    box-shadow: 2px 2px 0 #2c2c2c;
+}
+
+/* 5. 🚨 核心修复：强制隐藏解析 */
+.quiz-explanation {
+    display: none !important; /* 默认绝不显示！ */
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #FFFDF5;
+    border: 2px dashed #2c2c2c;
+    border-radius: 8px;
+    color: #444;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* 只有加了 show 类名才显示 */
+.quiz-explanation.show {
+    display: block !important;
+    animation: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 6. 重置按钮小箭头 */
+.reset-quiz-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 35px;
+    height: 35px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    color: #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: 0.3s;
+}
+.reset-quiz-btn:hover {
+    border-color: #2c2c2c;
+    background-color: #FFDAC1;
+    color: #2c2c2c;
+    transform: rotate(180deg);
+}
+/* ===================== 新增：曼波病毒模式样式 ===================== */
+
+/* 病毒容器：覆盖全屏，禁止滚动，确保表情包不撑破页面 */
+#mambo-virus-layer {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 20000; /* 比普通弹窗更高 */
+    pointer-events: none; /* 让鼠标点不到 */
+    overflow: hidden;
+    display: none; /* 默认隐藏 */
+}
+
+/* 每一个疯狂弹出的表情包 */
+.mambo-virus-item {
+    position: absolute;
+    border: 3px solid #2c2c2c;
+    border-radius: 8px;
+    box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+    animation: virus-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    object-fit: cover;
+    background: #fff; /* 防止透明图露馅 */
+}
+
+/* 弹出动画 */
+@keyframes virus-pop {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    100% { transform: scale(1) rotate(var(--rot)); opacity: 1; }
+}
+/* ===================== 新增：视频播放器样式 ===================== */
+
+/* 电视机外框 */
+.video-tv-frame {
+    width: 100%;
+    max-width: 900px;
+    background-color: #333; /* 深灰外壳 */
+    padding: 20px;
+    border: 4px solid #2c2c2c;
+    border-radius: 20px;
+    box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 屏幕区域 */
+.video-screen {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #555;
+    position: relative;
+}
+
+/* 控制栏区域 */
+.video-controls {
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    padding: 15px;
+    border: 3px solid #2c2c2c;
+}
+
+/* 进度条 */
+.video-progress-box {
+    margin-bottom: 15px;
+}
+#video-seekbar {
+    cursor: pointer;
+    accent-color: #FF6B6B; /* 进度条颜色 */
+    height: 8px;
+}
+
+/* 按钮行布局 */
+.video-btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.left-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.right-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* 播放器按钮样式 */
+.v-btn {
+    background: #fff;
+    border: 2px solid #2c2c2c;
+    border-radius: 8px;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 3px 3px 0 #2c2c2c;
+    transition: 0.1s;
+}
+.v-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #2c2c2c;
+}
+.play-btn {
+    background: #B5EAD7;
+    min-width: 80px;
+}
+
+/* 倍速下拉框 */
+#v-speed {
+    padding: 5px;
+    border: 2px solid #2c2c2c;
+    border-radius: 5px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}

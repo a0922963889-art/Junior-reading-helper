@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初中语文必读书目助读</title>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <canvas id="bgCanvas"></canvas>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-text">📚 悦读空间</span>
+        </div>
+        <div class="menu-items">
+             <div class="menu-item block-style grade-7">七年级 <span class="arrow">▶</span></div>
+             <div class="menu-item block-style grade-8">八年级 <span class="arrow">▶</span></div>
+             <div class="menu-item block-style grade-9">九年级 <span class="arrow">▶</span></div>
+        </div>
+    </nav>
+
+    <nav class="sidebar" id="reader-sidebar" style="display: none; overflow-y: auto; max-height: 95vh;">
+        <div class="sidebar-header">
+            <span class="logo-text" id="sidebar-book-title">朝花夕拾</span>
+            <button class="nav-btn-exit" onclick="closeBook()">◀ 退出书架</button>
+        </div>
+        
+        <div class="menu-items">
+            <div class="menu-group">
+                <div class="menu-item block-style active-mode" onclick="switchReaderMode('cloze')" id="btn-cloze">
+                    <span>📝 知识点填空</span><span class="arrow">▼</span>
+                </div>
+                <div class="submenu" id="chapter-list"></div>
+            </div>
+
+            <div class="menu-group" style="margin-top: 15px;">
+                <div class="menu-item block-style" onclick="switchReaderMode('mindmap')" id="btn-mindmap">
+                    <span>🧠 思维导图</span><span class="arrow">▼</span>
+                </div>
+            </div>
+
+            <div class="menu-group" style="margin-top: 15px;">
+                <div class="menu-item block-style" onclick="switchReaderMode('quiz')" id="btn-quiz">
+                    <span>✅ 选择题挑战</span><span class="arrow">▼</span>
+                </div>
+                <div class="submenu" id="quiz-list" style="display: none;"></div>
+            </div>
+
+            
+
+            <div class="menu-group" style="margin-top: 15px;">
+                <div class="menu-item block-style" onclick="switchReaderMode('video')" id="btn-video" style="background: #a1c4fd;">
+                    <span>🎬 视频精讲</span><span class="arrow">▶</span>
+                </div>
+            </div>
+            <div class="menu-group" style="margin-top: 15px;">
+                <div class="menu-item block-style" onclick="switchReaderMode('gravity')" id="btn-gravity" style="background: #E0BBE4;">
+                    <span>⚛️ 人物引力场</span><span class="arrow">●</span>
+                </div>
+            </div>
+                <div style="font-size: 0.9rem; color: #FF6B6B; text-align: center; margin-bottom: 8px; font-weight: bold;">
+                    把所有题木看完了再点击我
+                </div>
+                <div id="trap-btn" class="menu-item block-style" onmouseenter="triggerMamboTrap()" 
+                     style="background: #FF6B6B; color: white; border-color: #2c2c2c; text-align: center; display: block; cursor: pointer; transition: 0.1s;">
+                    <span style="font-size: 1.1rem;">🔥 全书综合训练</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content" id="main-content">
+        <section class="hero-section">
+            <div class="typewriter-container">
+                <h1 id="typewriter-text"></h1>
+                <span class="cursor">|</span>
+            </div>
+        </section>
+
+        <section class="books-grid">
+            <div class="book-card-wrapper" onclick="openBook('zhxs')">
+                <div class="book-cover block-style" style="transform: rotate(2deg);">
+                    <img src="assets/covers/zhxs.jpg" alt="朝花夕拾" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=\'gray-cover\'>朝花<br>夕拾</div>'">
+                </div>
+                <div class="book-title">《朝花夕拾》</div>
+            </div>
+            <div class="book-card-wrapper">
+                <div class="book-cover block-style gray-cover" style="transform: rotate(-1.5deg);">+</div>
+                <div class="book-title" style="color:#999">敬请期待</div>
+            </div>
+        </section>
+    </main>
+
+    <div id="book-reader" class="reader-container" style="display: none;">
+        
+        <div id="reader-content" class="content-body"></div>
+
+        <div id="mindmap-container" class="mindmap-body" style="display: none;">
+            <div id="mindmap-viewport">
+                <div id="mindmap-world">
+                    <svg id="mindmap-lines"></svg>
+                    <div id="mindmap-nodes"></div>
+                </div>
+            </div>
+            <div class="map-controls-tip">🖱️ 拖拽移动 | 🖱️ 滚轮缩放</div>
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomMap(0.1)">+</button>
+                <button class="zoom-btn" onclick="resetView()">🎯</button>
+                <button class="zoom-btn" onclick="zoomMap(-0.1)">-</button>
+            </div>
+        </div>
+
+        <div id="quiz-container" class="content-body" style="display: none;"></div>
+<div id="quiz-container" class="content-body" style="display: none;"></div>
+
+        <div id="video-container" class="content-body" style="display: none; align-items: center;">
+            <div class="video-tv-frame block-style">
+                <div class="video-screen">
+                    <video id="main-video" src="assets/video.mp4" poster="assets/covers/zhxs.jpg" width="100%" height="100%"></video>
+                </div>
+                
+                <div class="video-controls">
+                    <div class="video-progress-box">
+                        <input type="range" id="video-seekbar" value="0" step="0.1" style="width: 100%;">
+                    </div>
+                    
+                    <div class="video-btn-row">
+                        <div class="left-btns">
+                            <button class="v-btn" onclick="videoSkip(-15)">↺ -15s</button>
+                            <button class="v-btn play-btn" onclick="togglePlay()" id="v-play-btn">▶ 播放</button>
+                            <button class="v-btn" onclick="videoSkip(15)">+15s ↻</button>
+                        </div>
+                        
+                        <div class="right-info">
+                            <span id="v-time">00:00 / 00:00</span>
+                            <select id="v-speed" onchange="changeSpeed(this)">
+                                <option value="0.5">0.5x</option>
+                                <option value="1.0" selected>1.0x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2.0">2.0x</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; color: #666; font-size: 0.9rem;">
+                💡 提示：按空格键也可以暂停/播放哦
+            </div>
+        </div>
+        <div id="final-test-container" class="content-body" style="display: none; max-width: 1000px;">
+            <div class="test-paper-header">
+                <h1>《朝花夕拾》综合测评</h1>
+                <div class="test-info">
+                    <span>考生：    </span> &nbsp;|&nbsp; <span>总分：100分</span>
+                </div>
+                <div class="test-score-panel" id="test-score-panel" style="display:none;">
+                    得分：<span id="final-score">0</span> / 100
+                </div>
+            </div>
+
+            <div id="test-paper-body">
+                <div class="test-section">
+                    <h2 class="section-title">一、深度鉴赏选择题（40分）</h2>
+                    <div id="final-mc-questions" class="questions-list"></div>
+                </div>
+                <div class="test-section">
+                    <h2 class="section-title">二、精准记忆填空题（60分）</h2>
+                    <div id="final-cloze-questions" class="questions-list"></div>
+                </div>
+                <div style="text-align: center; margin: 50px 0;">
+                    <button class="nav-btn-exit" onclick="submitFinalTest()" style="font-size: 1.5rem; padding: 15px 50px; background: #FF6B6B;">提交试卷</button>
+                </div>
+                <div id="final-essay-section" class="test-section" style="display: none; margin-top: 50px; border-top: 5px solid #2c2c2c;">
+                    <h2 class="section-title" style="color: #d9534f;">三、压轴深度思考题（解析）</h2>
+                    <div id="final-essay-questions" class="questions-list"></div>
+                </div>
+            </div>
+        </div>
+<div id="gravity-container" class="mindmap-body" style="display: none; background: #000;">
+            <canvas id="gravity-canvas"></canvas>
+            <div class="map-controls-tip" style="background: rgba(0,0,0,0.5); color: #0ff; border: 1px solid #0ff; box-shadow: 0 0 10px #0ff;">
+                ⚛️ 拖拽荧光球体 | 感受物理引力
+            </div>
+        </div>
+    </div>
+<div id="mambo-overlay">
+        <div class="mambo-content">
+            <div id="mambo-phase-1">
+                <img src="assets/mambo_ask.jpg" alt="曼波表情1" class="mambo-img" onerror="this.src='https://via.placeholder.com/200x200?text=Mambo+Face'">
+                <div class="mambo-text">你真的读完了吗？——曼波</div>
+                <div class="mambo-btn-group">
+                    <button class="mambo-btn btn-yes" onmouseenter="this.style.opacity='0'; this.style.pointerEvents='none';">读完了</button>
+                    <button class="mambo-btn btn-no" onclick="triggerMamboPhase2()">没读完</button>
+                </div>
+            </div>
+
+            <div id="mambo-phase-2" style="display: none;">
+                <img src="assets/mambo_mock.jpg" alt="曼波表情2" class="mambo-img" onerror="this.src='https://via.placeholder.com/200x200?text=Sad+Face'">
+                <div class="mambo-text">没读完你就受着呗！</div>
+            </div>
+        </div>
+    </div>
+    <script src="js/database.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
