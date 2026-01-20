@@ -447,3 +447,186 @@ body { font-family: var(--main-font); background-color: var(--bg-color); color: 
     font-weight: bold;
     cursor: pointer;
 }
+/* ================= 用户登录系统样式 ================= */
+
+/* 1. 侧边栏的小卡片 */
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 头像和文字的间距 */
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    border: 3px solid #2c2c2c; /* 波普风黑边框 */
+    box-shadow: 4px 4px 0 #2c2c2c; /* 硬阴影 */
+    cursor: pointer;
+    transition: 0.2s;
+}
+.user-card:hover {
+    transform: translate(-2px, -2px); /* 悬浮效果 */
+    box-shadow: 6px 6px 0 #2c2c2c;
+}
+
+/* 头像圆圈 */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #2c2c2c;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* 昵称文字 */
+.user-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 名字太长显示省略号 */
+    max-width: 120px;
+}
+
+/* 退出按钮 */
+.logout-btn {
+    font-size: 0.75rem;
+    color: #FF6B6B;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+/* 2. 全屏遮罩层 (半透明黑底) */
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 20000; /* 确保在最上层 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 3. 弹窗主体 */
+.auth-box {
+    width: 360px;
+    padding: 30px;
+    background: #FFFDF5;
+    position: relative; /* 为了放关闭按钮 */
+    text-align: center;
+}
+.auth-box h2 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: #2c2c2c;
+}
+
+/* 输入框组 */
+.input-group {
+    text-align: left;
+    margin-bottom: 15px;
+}
+.input-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #2c2c2c;
+    border-radius: 6px;
+    font-family: inherit; /* 保持卡通字体 */
+    font-size: 1rem;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+/* 弹窗按钮 */
+.auth-btns {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+.pop-btn {
+    flex: 1; /* 两个按钮平分宽度 */
+    padding: 12px;
+    border: 2px solid #2c2c2c;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #2c2c2c;
+    transition: 0.1s;
+    font-family: inherit;
+    font-size: 1rem;
+}
+.pop-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #2c2c2c;
+}
+.pop-btn.green { background: #B5EAD7; color: #2c2c2c; }
+.pop-btn.yellow { background: #FFDAC1; color: #2c2c2c; }
+
+/* 右上角关闭按钮 */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #999;
+}
+.close-btn:hover { color: #FF6B6B; }
+/* 顶部切换标签 */
+.auth-tabs {
+    display: flex; justify-content: center; gap: 40px;
+    margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;
+}
+.auth-tabs span { cursor: pointer; font-size: 1.1rem; color: #999; padding-bottom: 5px; }
+.auth-tabs .active-tab { color: #2c2c2c; font-weight: 900; border-bottom: 3px solid #FF6B6B; }
+
+/* 波普小按钮 (发送验证码专用) */
+.pop-btn-small {
+    padding: 8px 15px;
+    border: 2px solid #2c2c2c;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #2c2c2c;
+    transition: 0.2s;
+    white-space: nowrap; /* 不换行 */
+}
+.pop-btn-small:hover {
+    transform: translate(-2px, -2px); /* 微微浮起 */
+    box-shadow: 5px 5px 0 #2c2c2c; /* 阴影变长 */
+}
+.pop-btn-small:disabled {
+    background: #ddd; color: #888; border-color: #999;
+    box-shadow: none; transform: none; cursor: not-allowed;
+}
+
+/* 下滑动画 */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+#reg-code {
+    width: 100%;
+    /* 8位数字时，间距不能太大，5px-8px 比较合适 */
+    letter-spacing: 5px; 
+    /* 稍微缩小一点字号，确保在手机端也不会溢出 */
+    font-size: 1.1rem; 
+    padding: 12px 5px;
+    font-family: 'Courier New', Courier, monospace; /* 使用等宽字体让数字对齐更美观 */
+}
