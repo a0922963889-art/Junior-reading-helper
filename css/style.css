@@ -1,632 +1,716 @@
-/* ===================== 全局设置 ===================== */
-:root {
-    --bg-color: #FFFDF5;
-    --primary-green: #B5EAD7;
-    --accent-yellow: #FFDAC1;
-    --light-yellow-text: #FFF9C4;
-    --text-color: #4A4A4A;
-    --border-color: #2c2c2c;
-    --main-font: "ZCOOL KuaiLe", cursive, sans-serif;
+// 引力场专用的全局状态
+let gNodes = [], gLinks = [], gAnimationId = null;
+let gWidth, gHeight;
+let gDraggingNode = null;
+let lastMouseX = 0, lastMouseY = 0;
+const canvas=document.getElementById('bgCanvas'), ctx=canvas.getContext('2d');
+let width, height, particles=[];
+function resize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize); resize();
+class Particle{
+    constructor(){this.init();}
+    init(){this.x=Math.random()*width;this.y=Math.random()*height;this.r=Math.random()*200+100;this.vx=(Math.random()-0.5)*0.5;this.vy=(Math.random()-0.5)*0.5;this.alpha=0;this.targetAlpha=Math.random()*0.3+0.1;this.fadingIn=true;this.color=['255, 253, 245','181, 234, 215','255, 218, 193'][Math.floor(Math.random()*3)];}
+    update(){this.x+=this.vx;this.y+=this.vy;if(this.x<-this.r||this.x>width+this.r)this.vx*=-1;if(this.y<-this.r||this.y>height+this.r)this.vy*=-1;if(this.fadingIn){this.alpha+=0.002;if(this.alpha>=this.targetAlpha)this.fadingIn=false;}else{this.alpha-=0.002;if(this.alpha<=0)this.init();}}
+    draw(){ctx.beginPath();const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r);g.addColorStop(0,`rgba(${this.color},${this.alpha})`);g.addColorStop(1,`rgba(${this.color},0)`);ctx.fillStyle=g;ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();}
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--main-font); background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; height: 100vh; }
-#bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+for(let i=0;i<15;i++)particles.push(new Particle());
+function animate(){ctx.clearRect(0,0,width,height);ctx.fillStyle='#FFFDF5';ctx.fillRect(0,0,width,height);particles.forEach(p=>{p.update();p.draw();});requestAnimationFrame(animate);}
+animate();
 
-/* ===================== 波普积木 ===================== */
-.block-style {
-    background: #fff; border: 3px solid var(--border-color); border-radius: 12px;
-    box-shadow: 5px 5px 0px var(--border-color); transition: 0.2s;
-}
-.block-style:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px var(--border-color); }
+const texts=["让阅读更简单","必读书目助读","关键考点积累","思维导图理解"];
+let ti=0, ci=0, isDel=false; const typeEl=document.getElementById('typewriter-text');
+function type(){const cur=texts[ti]; typeEl.textContent=isDel?cur.substring(0,ci-1):cur.substring(0,ci+1); ci=isDel?ci-1:ci+1; let spd=150; if(!isDel&&ci===cur.length){spd=2000;isDel=true;} else if(isDel&&ci===0){isDel=false;ti=(ti+1)%texts.length;spd=500;} else if(isDel)spd=100; setTimeout(type,spd);}
+document.addEventListener('DOMContentLoaded',type);
 
-/* ===================== 侧边栏 ===================== */
-.sidebar { position: fixed; left: 30px; top: 30px; width: 230px; z-index: 9999 !important; }
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-.logo-text { font-size: 1.6rem; font-weight: bold; color: var(--border-color); text-shadow: 2px 2px 0 #fff; }
-.nav-btn-exit {
-    background: #FF6B6B; color: #fff; border: 3px solid var(--border-color);
-    border-radius: 8px; padding: 5px 12px; font-family: inherit; font-weight: bold;
-    box-shadow: 4px 4px 0px var(--border-color); cursor: pointer;
-}
-.nav-btn-exit:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--border-color); }
-.menu-item {
-    margin-bottom: 15px; padding: 12px 18px; background: #fff; border: 3px solid var(--border-color);
-    border-radius: 10px; box-shadow: 4px 4px 0px var(--border-color); cursor: pointer;
-    display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem;
-}
-.grade-7 { background-color: #ffecd2; } .grade-8 { background-color: #fcb69f; } .grade-9 { background-color: #a1c4fd; }
-.active-mode { background: var(--accent-yellow) !important; transform: translate(2px, 2px) !important; box-shadow: 1px 1px 0px var(--border-color) !important; }
-.submenu { margin-left: 10px; margin-top: 8px; border-left: 3px dashed #ccc; padding-left: 10px; }
-.submenu-item { padding: 8px; cursor: pointer; color: #555; border-radius: 5px; transition: 0.2s; }
-.submenu-item:hover { background: var(--primary-green); color: #fff; font-weight: bold; border: 2px solid var(--border-color); }
+const mainContent=document.getElementById('main-content'), sidebar=document.getElementById('sidebar'), readerSidebar=document.getElementById('reader-sidebar'), readerContainer=document.getElementById('book-reader');
+const clozeView=document.getElementById('reader-content'), mindmapView=document.getElementById('mindmap-container'), quizView=document.getElementById('quiz-container'), finalTestView=document.getElementById('final-test-container');
+const chapterList=document.getElementById('chapter-list'), quizList=document.getElementById('quiz-list');
+const btnCloze=document.getElementById('btn-cloze'), btnMindmap=document.getElementById('btn-mindmap'), btnQuiz=document.getElementById('btn-quiz');
 
-/* ===================== 主页 & 打字机 (修复错位) ===================== */
-.main-content { padding: 20px; height: 100vh; overflow-y: auto; }
-.hero-section { height: 40vh; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
-.typewriter-container {
-    padding: 25px 60px; background-color: var(--primary-green);
-    border: 3px solid var(--border-color); border-radius: 15px;
-    box-shadow: 8px 8px 0px rgba(0,0,0,0.15); display: flex; transform: rotate(-1deg); min-width: 450px;
+window.openBook=function(id){
+    if(id!=='zhxs'){alert("敬请期待！");return;}
+    mainContent.style.display='none'; sidebar.style.display='none';
+    readerContainer.style.display='flex'; readerSidebar.style.display='block';
+    generateChapterList(); generateQuizList();
+    switchReaderMode('cloze'); loadZhxsContent();
 }
-#typewriter-text { font-size: 3rem; color: var(--light-yellow-text); text-shadow: 3px 3px 0px var(--border-color); font-weight: 900; }
-.cursor { font-size: 3rem; color: var(--light-yellow-text); text-shadow: 3px 3px 0px var(--border-color); animation: blink 1s infinite; }
-@keyframes blink { 0%, 100% {opacity: 1} 50% {opacity: 0} }
+window.closeBook=function(){ readerContainer.style.display='none'; readerSidebar.style.display='none'; mainContent.style.display='block'; sidebar.style.display='block'; }
 
-/* 修复首页书架发癫问题：增加间距，控制高度 */
-.books-grid { 
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 60px; 
-    padding: 0 50px 100px; max-width: 1400px; margin: 0 auto; 
-}
-.book-card-wrapper { 
-    display: flex; flex-direction: column; align-items: center; cursor: pointer; 
-    width: 180px; transition: 0.3s; 
-}
-.book-card-wrapper:hover { transform: translateY(-10px); }
-.book-cover { 
-    width: 100%; aspect-ratio: 2/3; background: #fff; 
-    border: 3px solid var(--border-color); border-radius: 8px; 
-    box-shadow: 6px 6px 0px var(--border-color); overflow: hidden; 
-    display: flex; align-items: center; justify-content: center;
-}
-.book-cover img { width: 100%; height: 100%; object-fit: cover; }
-.book-title { 
-    margin-top: -15px; font-weight: bold; background: #fff; padding: 6px 15px; 
-    border-radius: 20px; border: 2px solid var(--border-color); 
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.1); z-index: 2; 
-}
-.gray-cover { font-size: 3rem; color: #ccc; background: #eee; }
+// 更新后的 switchReaderMode 函数
+window.switchReaderMode = function(mode){
+    // 1. 隐藏所有
+    clozeView.style.display='none'; 
+    mindmapView.style.display='none'; 
+    quizView.style.display='none'; 
+    finalTestView.style.display='none';
+    document.getElementById('video-container').style.display='none';
+    document.getElementById('gravity-container').style.display='none'; // 新增
 
-/* ===================== 阅读器 (修复输入框焦点) ===================== */
-.reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 100; overflow-y: auto; display: none; }
-.content-body { margin-left: 260px; padding: 40px; max-width: 1000px; width: calc(100% - 260px); display: flex; flex-direction: column; gap: 40px; align-items: center; padding-bottom: 100px; }
+    // 2. 重置按钮
+    btnCloze.classList.remove('active-mode'); 
+    btnMindmap.classList.remove('active-mode'); 
+    btnQuiz.classList.remove('active-mode');
+    document.getElementById('btn-video').classList.remove('active-mode');
+    const btnGrav = document.getElementById('btn-gravity');
+    if(btnGrav) btnGrav.classList.remove('active-mode'); // 新增
 
-.sheet-card {
-    width: 100%; background: #fff; padding: 50px 70px;
-    border: 3px solid var(--border-color); border-radius: 8px;
-    box-shadow: 8px 8px 0px rgba(0,0,0,0.1);
-    background-image: linear-gradient(#f1f1f1 1px, transparent 1px); background-size: 100% 45px; position: relative;
-}
-.sheet-card::before {
-    content: ''; position: absolute; top: -15px; right: 40px; width: 25px; height: 50px;
-    background: var(--primary-green); border: 2px solid var(--border-color); border-radius: 12px;
-    transform: rotate(15deg); z-index: 1; box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-}
-.sheet-title { text-align: center; font-size: 2rem; margin-bottom: 40px; background: #fff; padding: 10px 30px; border: 3px dashed var(--border-color); border-radius: 30px; transform: rotate(-1deg); display: inline-block; }
-.question-line { font-size: 1.3rem; line-height: 45px; color: #555; }
-.cloze-slot { display: inline-block; min-width: 80px; border-bottom: 2px dashed #888; color: transparent; cursor: pointer; text-align: center; padding: 0 5px; }
-.cloze-slot:hover { border-bottom-color: var(--primary-green); background-color: rgba(0,0,0,0.05); }
-.cloze-slot.revealed { color: #fff; background: #FF6B6B; border: 2px solid var(--border-color); border-radius: 6px; box-shadow: 3px 3px 0 var(--border-color); padding: 0 10px; animation: pop 0.4s forwards; display: inline-block; }
-@keyframes pop { 0% {transform: scale(0.5);opacity:0;} 60% {transform: scale(1.2);} 100% {transform: scale(1);opacity:1;} }
+    chapterList.style.display='none'; 
+    quizList.style.display='none';
+    
+    // 3. 停止物理引擎 (重要!)
+    if(typeof stopGravity === 'function') stopGravity();
 
-/* ===================== 思维导图 ===================== */
-.mindmap-body { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFFDF5; background-image: radial-gradient(#ddd 1px, transparent 1px); background-size: 20px 20px; z-index: 200; overflow: hidden; cursor: grab; display: none; }
-.mindmap-body:active { cursor: grabbing; }
-#mindmap-viewport, #mindmap-world { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: 0 0; }
-#mindmap-lines { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; z-index: 1; pointer-events: none; }
-.connection-line { fill: none; stroke: #555; stroke-width: 2px; transition: d 0.3s; }
-.mind-node { position: absolute; padding: 10px 20px; background: #fff; border: none; border-radius: 10px; box-shadow: 5px 5px 0 #2c2c2c; font-size: 1rem; cursor: pointer; transform: translate(0, -50%); transition: 0.2s; white-space: nowrap; }
-.mind-node:hover { background: var(--primary-green); transform: translate(0, -55%) scale(1.05); z-index: 100; box-shadow: 8px 8px 0 #2c2c2c; }
-.mind-node.root-node { background: var(--accent-yellow); font-size: 1.5rem; padding: 18px 36px; border: 2px solid #2c2c2c; }
-.zoom-controls { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
-.zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: #fff; border: 3px solid #2c2c2c; font-size: 1.5rem; cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
-
-/* ===================== 综合试卷 (修复输入框点击) ===================== */
-.test-paper-header { text-align: center; margin-bottom: 50px; border-bottom: 3px double #2c2c2c; padding-bottom: 20px; }
-.test-paper-header h1 { font-size: 2.5rem; color: #2c2c2c; margin-bottom: 15px; }
-.test-info { font-size: 1.2rem; color: #555; font-weight: bold; }
-.test-score-panel { font-size: 2rem; color: #d9534f; margin-top: 15px; font-weight: 900; }
-/* ===================== 修复：试卷区域字体优化 ===================== */
-/* 强制试卷内容使用清晰字体，不再用手绘字体 */
-.test-section, .quiz-card {
-    font-family: "Microsoft YaHei", "PingFang SC", sans-serif; 
+    // 4. 显示对应
+    if(mode==='cloze'){ clozeView.style.display='flex'; btnCloze.classList.add('active-mode'); chapterList.style.display='block'; }
+    else if(mode==='mindmap'){ mindmapView.style.display='block'; btnMindmap.classList.add('active-mode'); if(!mapInitialized) initMindMap(); }
+    else if(mode==='quiz'){ quizView.style.display='flex'; btnQuiz.classList.add('active-mode'); quizList.style.display='block'; loadQuizContent(0); }
+    else if(mode==='video'){ document.getElementById('video-container').style.display='flex'; document.getElementById('btn-video').classList.add('active-mode'); }
+    else if(mode==='gravity'){ // 新增分支
+        document.getElementById('gravity-container').style.display='block'; 
+        if(btnGrav) btnGrav.classList.add('active-mode');
+        if(typeof startGravity === 'function') startGravity();
+    }
 }
 
-.test-q-title, .quiz-question {
-    font-size: 1.15rem;
-    font-weight: bold;
-    line-height: 1.6;
-    color: #333;
-    margin-bottom: 15px;
+function generateChapterList(){
+    chapterList.innerHTML=''; if(typeof ZHXS_DATA==='undefined')return;
+    ZHXS_DATA.forEach((c,i)=>{
+        const el=document.createElement('div'); el.className='submenu-item'; el.innerText=c.title.split('：')[1]||c.title;
+        el.onclick=()=>{switchReaderMode('cloze'); document.querySelectorAll('.sheet-card')[i]?.scrollIntoView({behavior:'smooth'});};
+        chapterList.appendChild(el);
+    });
+}
+function generateQuizList(){
+    quizList.innerHTML=''; if(typeof ZHXS_DATA==='undefined')return;
+    ZHXS_DATA.forEach((c,i)=>{
+        const el=document.createElement('div'); el.className='submenu-item'; el.innerText=c.title.split('：')[1]||c.title;
+        el.onclick=()=>{ loadQuizContent(i); quizView.scrollTop=0; };
+        quizList.appendChild(el);
+    });
 }
 
-.test-mc-label, .quiz-option {
-    font-family: Arial, "Microsoft YaHei", sans-serif; /* 确保ABCD字母清晰 */
-    font-size: 1rem;
-    line-height: 1.5;
+window.toggleCloze=function(el){el.classList.toggle('revealed');}
+function loadZhxsContent(){
+    clozeView.innerHTML=''; if(typeof ZHXS_DATA==='undefined')return;
+    ZHXS_DATA.forEach(c=>{
+        const s=document.createElement('div'); s.className='sheet-card block-style';
+        let h=`<h2 class="sheet-title">${c.title}</h2>`;
+        for(let k in c.categories){ h+=`<div style="font-weight:bold;margin:25px 0 10px;color:#2c2c2c">● ${k}</div>`; c.categories[k].forEach((q,i)=>{ h+=`<div class="question-line">${i+1}. ${q.q.replace(/\{(.*?)\}/g,(m,p)=>`<span class="cloze-slot" onclick="toggleCloze(this)">${p}</span>`)}</div>`; }); }
+        s.innerHTML=h; clozeView.appendChild(s);
+    });
 }
 
-/* 标题保持波普风，内容回归严肃 */
-.section-title {
-    font-family: "ZCOOL KuaiLe", cursive; 
+// ===================== 修复版：选择题渲染逻辑 =====================
+
+function loadQuizContent(idx){
+    const qView = document.getElementById('quiz-container'); // 确保变量名对齐
+    qView.innerHTML=''; 
+    const c = ZHXS_DATA[idx];
+    
+    // 如果没有题目
+    if(!c.quiz || c.quiz.length === 0){
+        qView.innerHTML=`<div style="color:#999;text-align:center;margin-top:50px;">本章暂无选择题数据</div>`;
+        return;
+    }
+
+    const h = document.createElement('h2'); 
+    h.className = 'sheet-title'; 
+    h.innerText = c.title + ' · 10道精选'; 
+    qView.appendChild(h);
+
+    c.quiz.forEach((q,i)=>{
+        const card = document.createElement('div'); 
+        card.className = 'quiz-card'; // 对应CSS样式
+
+        // 重置按钮
+        const r = document.createElement('div'); 
+        r.className = 'reset-quiz-btn'; 
+        r.innerHTML = '↻'; 
+        r.onclick = () => resetQuiz(card, q);
+
+        // 题目
+        const qt = document.createElement('div'); 
+        qt.className = 'quiz-question'; 
+        qt.innerText = `${i+1}. ${q.q}`;
+
+        // 选项容器
+        const ops = document.createElement('div'); 
+        ops.className = 'quiz-options';
+
+        q.options.forEach((opt,oi)=>{
+            const b = document.createElement('div'); 
+            b.className = 'quiz-option'; 
+            b.innerText = opt;
+            // 绑定点击事件
+            b.onclick = () => checkAns(b, oi, q.answer, card); 
+            ops.appendChild(b);
+        });
+
+        // 解析框 (默认隐藏)
+        const exp = document.createElement('div'); 
+        exp.className = 'quiz-explanation'; // CSS里有 display: none
+        exp.innerText = q.explain;
+
+        card.append(r, qt, ops, exp); 
+        qView.appendChild(card);
+    });
+    
+    // 底部垫高
+    const sp = document.createElement('div'); 
+    sp.style.height = '100px'; 
+    qView.appendChild(sp);
 }
 
-/* ===================== 新增：曼波整蛊弹窗 (Mambo Overlay) ===================== */
-#mambo-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); /* 深色背景 */
-    z-index: 10000; /* 最高层级 */
-    display: none; /* 默认隐藏 */
-    flex-direction: column; align-items: center; justify-content: center;
+// 判题逻辑
+function checkAns(btn, idx, ans, card){
+    // 如果已经答过了(有任何红或绿)，就禁止再点
+    if(card.querySelector('.correct') || card.querySelector('.wrong')) return;
+    
+    const opts = card.querySelectorAll('.quiz-option');
+    const exp = card.querySelector('.quiz-explanation');
+
+    if(idx === ans){
+        // 答对
+        btn.classList.add('correct'); 
+        btn.innerText += ' ✅';
+    } else {
+        // 答错
+        btn.classList.add('wrong'); 
+        btn.innerText += ' ❌';
+        // 显示正确答案
+        opts[ans].classList.add('correct'); 
+        opts[ans].innerText += ' ✅';
+    }
+    // 显示解析
+    exp.classList.add('show'); 
 }
 
-.mambo-content {
-    background: #fff;
-    padding: 30px;
-    border: 5px solid #2c2c2c;
-    border-radius: 20px;
-    box-shadow: 10px 10px 0 #FF6B6B;
-    text-align: center;
-    max-width: 500px;
-    animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+// 重置逻辑
+function resetQuiz(card, q){
+    const opts = card.querySelectorAll('.quiz-option');
+    opts.forEach((o,i)=>{
+        o.className = 'quiz-option'; // 移除颜色
+        o.innerText = q.options[i];  // 移除对勾叉号
+    });
+    // 隐藏解析
+    card.querySelector('.quiz-explanation').classList.remove('show');
 }
 
-.mambo-img {
-    width: 200px; height: 200px; 
-    object-fit: cover; 
-    border: 3px solid #2c2c2c;
-    margin-bottom: 20px;
-    border-radius: 10px;
+let mapScale=0.9, mapX=100, mapY=300, isDragging=false, startX, startY, mapInitialized=false;
+const viewport=document.getElementById('mindmap-viewport'), world=document.getElementById('mindmap-world'), svgLayer=document.getElementById('mindmap-lines'), nodesLayer=document.getElementById('mindmap-nodes');
+function buildChain(s){const p=s.split('->').map(x=>x.trim());let r={name:p[p.length-1]};for(let i=p.length-2;i>=0;i--)r={name:p[i],children:[r]};return r;}
+const FULL_MAP_DATA={id:"root",name:"《朝花夕拾》",type:"root",children:[{name:"狗猫鼠",children:[{name:"情感",children:[buildChain("仇猫->媚态")]},{name:"批判",children:[buildChain("正人君子")]}]},{name:"阿长",children:[{name:"情感",children:[buildChain("厌恶->感激")]}]},{name:"二十四孝图",children:[{name:"批判",children:[buildChain("虚伪残酷")]}]},{name:"五猖会",children:[{name:"压抑",children:[buildChain("背书->扫兴")]}]}]};
+function initMindMap(){mapInitialized=true;renderMindMap(FULL_MAP_DATA);mapX=100;mapY=window.innerHeight/2;updateTransform();}
+const NODE_H=45, LEVEL_W=220, NODE_M=15;
+function layoutNode(n,l){n.level=l;if(!n.children||!n.children.length){n.contentHeight=NODE_H;return;}let h=0;n.children.forEach(c=>{layoutNode(c,l+1);h+=c.contentHeight+NODE_M;});h-=NODE_M;n.contentHeight=h;}
+function assignPos(n,x,y){n.x=x;n.y=y+n.contentHeight/2;if(!n.children)return;let cy=y;n.children.forEach(c=>{assignPos(c,x+LEVEL_W,cy);cy+=c.contentHeight+NODE_M;});}
+function renderMindMap(d){nodesLayer.innerHTML='';svgLayer.innerHTML='';layoutNode(d,0);assignPos(d,0,-d.contentHeight/2);drawNode(d);svgLayer.setAttribute('width','50000');svgLayer.setAttribute('height','50000');}
+function drawNode(n){ const el=document.createElement('div'); el.className=`mind-node level-${Math.min(n.level,3)}`; if(n.type==='root')el.classList.add('root-node'); el.innerHTML=n.name; el.style.left=n.x+'px'; el.style.top=(n.y-NODE_H/2)+'px'; nodesLayer.appendChild(el); if(n.children){n.children.forEach(c=>{ const sx=n.x+el.offsetWidth-5, sy=n.y, ex=c.x+5, ey=c.y; const d=`M ${sx} ${sy} C ${sx+(ex-sx)/2} ${sy}, ${ex-(ex-sx)/2} ${ey}, ${ex} ${ey}`; const p=document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute("d",d); p.setAttribute("class","connection-line"); svgLayer.appendChild(p); drawNode(c); });} }
+viewport.addEventListener('mousedown',e=>{isDragging=true;startX=e.clientX-mapX;startY=e.clientY-mapY;}); window.addEventListener('mousemove',e=>{if(!isDragging)return;mapX=e.clientX-startX;mapY=e.clientY-startY;updateTransform();}); window.addEventListener('mouseup',()=>{isDragging=false;}); function updateTransform(){world.style.transform=`translate(${mapX}px,${mapY}px) scale(${mapScale})`;} window.zoomMap=(d)=>{mapScale+=d;updateTransform();}, window.resetView=()=>{mapScale=0.9;mapX=100;mapY=window.innerHeight/2;updateTransform();}
+
+// ===================== 终极试卷逻辑 =====================
+window.startFinalTest = function() {
+    switchReaderMode('none'); 
+    finalTestView.style.display = 'block'; 
+    renderFinalTest();
 }
 
-.mambo-text {
-    font-family: "ZCOOL KuaiLe", cursive;
-    font-size: 1.8rem;
-    color: #2c2c2c;
-    margin-bottom: 30px;
+function renderFinalTest() {
+    const mcC = document.getElementById('final-mc-questions');
+    const clC = document.getElementById('final-cloze-questions');
+    const esC = document.getElementById('final-essay-questions');
+    
+    // 选择题
+    mcC.innerHTML = '';
+    if(typeof FINAL_TEST_DATA !== 'undefined' && FINAL_TEST_DATA.mc) {
+        FINAL_TEST_DATA.mc.forEach((q, i) => {
+            let h = `<div class="test-q-item" id="mc-${i}"><div class="test-q-title">${i+1}. ${q.q}</div><div class="test-mc-options">`;
+            q.opts.forEach((o, idx) => h+=`<label class="test-mc-label"><input type="radio" name="mc-${i}" value="${idx}"> ${o}</label>`);
+            h += `</div><div class="analysis-box" id="mc-exp-${i}">${q.exp}</div></div>`;
+            mcC.innerHTML += h;
+        });
+    }
+
+    // 填空题
+    clC.innerHTML = '';
+    if(typeof FINAL_TEST_DATA !== 'undefined' && FINAL_TEST_DATA.cloze) {
+        FINAL_TEST_DATA.cloze.forEach((q, i) => {
+            let parts = q.q.split(/\{|\}/), h = '';
+            parts.forEach((p, idx) => h += idx%2===0 ? p : `<input type="text" class="test-cloze-input" data-qid="${i}" data-ans="${p}">`);
+            clC.innerHTML += `<div class="test-q-item" id="cloze-${i}"><div class="test-q-title">${i+1}. ${h}</div><div class="analysis-box" id="cloze-exp-${i}">答案：<span class="correct-answer">${q.a}</span></div></div>`;
+        });
+    }
+
+    // 压轴大题 (仅渲染题目，解析隐藏)
+    esC.innerHTML = '';
+    if(typeof FINAL_TEST_DATA !== 'undefined' && FINAL_TEST_DATA.essay) {
+        FINAL_TEST_DATA.essay.forEach((q, i) => {
+            esC.innerHTML += `<div class="test-q-item"><div class="test-q-title" style="font-size:1.3rem;color:#333;">${q.title}</div><div style="padding:15px;background:#f9f9f9;margin-bottom:10px;line-height:1.6;">${q.text}</div><div class="analysis-box" id="essay-ans-${i}" style="display:none;background:#FFFDF5;border-left:4px solid #FF6B6B;">${q.ans}</div></div>`;
+        });
+    }
 }
 
-.mambo-btn-group {
-    display: flex; justify-content: center; gap: 30px;
+window.submitFinalTest = function() {
+    if(!confirm("确定要提交试卷吗？")) return;
+    let score = 0;
+    // 批改选择
+    if(FINAL_TEST_DATA.mc) FINAL_TEST_DATA.mc.forEach((q, i) => {
+        let sel = -1;
+        document.getElementsByName(`mc-${i}`).forEach(inp => { if(inp.checked) sel = parseInt(inp.value); });
+        document.getElementById(`mc-exp-${i}`).style.display = 'block';
+        if(sel === q.ans) { score += 2; document.getElementById(`mc-${i}`).style.borderLeft = "5px solid green"; }
+        else document.getElementById(`mc-${i}`).style.borderLeft = "5px solid red";
+    });
+    // 批改填空
+    if(FINAL_TEST_DATA.cloze) FINAL_TEST_DATA.cloze.forEach((q, i) => {
+        const item = document.getElementById(`cloze-${i}`);
+        let allCorrect = true;
+        item.querySelectorAll('input').forEach(inp => {
+            if(inp.value.trim() !== inp.getAttribute('data-ans')) { allCorrect = false; inp.style.color = 'red'; }
+            else inp.style.color = 'green';
+        });
+        if(allCorrect) { score += 1; item.style.borderLeft = "5px solid green"; }
+        else { item.style.borderLeft = "5px solid red"; document.getElementById(`cloze-exp-${i}`).style.display = 'block'; }
+    });
+    
+    // 显示大题解析
+    if(FINAL_TEST_DATA.essay) FINAL_TEST_DATA.essay.forEach((q,i) => document.getElementById(`essay-ans-${i}`).style.display='block');
+    
+    document.getElementById('test-score-panel').style.display = 'block';
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('final-essay-section').style.display = 'block';
+    document.getElementById('final-test-container').scrollTop = 0;
+}
+// ==========================================
+// 6. 曼波整蛊逻辑 (Mambo Prank)
+// ==========================================
+
+
+// ==========================================
+// 6. 曼波整蛊逻辑 (病毒爆发版)
+// ==========================================
+
+// 1. 鼠标碰到入口按钮：按钮消失，弹窗出现 (保持不变)
+function triggerMamboTrap() {
+    const btn = document.getElementById('trap-btn');
+    const overlay = document.getElementById('mambo-overlay');
+    
+    setTimeout(() => { overlay.style.display = 'flex'; }, 100);
 }
 
-.mambo-btn {
-    padding: 10px 30px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border: 3px solid #2c2c2c;
-    border-radius: 10px;
-    cursor: pointer;
-    box-shadow: 4px 4px 0 #2c2c2c;
-    transition: 0.2s;
-    font-family: "ZCOOL KuaiLe", cursive;
+// 2. 【核心修改】点击“没读完”：病毒爆发 -> 3秒后进考试
+function triggerMamboPhase2() {
+    // 1. 隐藏提问弹窗
+    document.getElementById('mambo-phase-1').style.display = 'none';
+    
+    // 2. 准备病毒容器 (如果没有就创建)
+    let virusLayer = document.getElementById('mambo-virus-layer');
+    if (!virusLayer) {
+        virusLayer = document.createElement('div');
+        virusLayer.id = 'mambo-virus-layer';
+        document.body.appendChild(virusLayer);
+    }
+    virusLayer.innerHTML = ''; // 清空旧的
+    virusLayer.style.display = 'block';
+
+    // 3. 准备素材 (嘲讽图)
+    // 请确保你的 assets 文件夹里有 mambo_mock.jpg
+    const virusSrc = 'assets/mambo_mock.jpg'; 
+    let counter = 0;
+
+    // 4. 开启病毒生成器 (每30毫秒生成一个，极快)
+    const virusInterval = setInterval(() => {
+        const img = document.createElement('img');
+        img.src = virusSrc;
+        img.className = 'mambo-virus-item';
+        
+        // 随机大小 (100px - 300px)
+        const size = Math.floor(Math.random() * 200) + 100;
+        
+        // 随机位置 (减去图片大小，防止贴边太难看)
+        const x = Math.random() * (window.innerWidth - size);
+        const y = Math.random() * (window.innerHeight - size);
+        
+        // 随机旋转 (-45度 到 45度)
+        const rot = Math.floor(Math.random() * 90) - 45;
+        
+        // 应用样式
+        img.style.width = size + 'px';
+        img.style.height = size + 'px'; // 正方形
+        img.style.left = x + 'px';
+        img.style.top = y + 'px';
+        img.style.setProperty('--rot', rot + 'deg'); // 给动画用的变量
+        img.style.transform = `rotate(${rot}deg)`;   // 最终状态
+        img.style.zIndex = 20000 + counter; // 越后的层级越高，堆叠效果
+
+        virusLayer.appendChild(img);
+        
+        counter++;
+        
+        // 限制数量防止浏览器崩溃 (最多生成100个)
+        if(counter > 1500) clearInterval(virusInterval);
+
+    }, 10); // 频率：30ms
+
+    // 5. 3秒后清理战场，进入考试
+    setTimeout(() => {
+        clearInterval(virusInterval);
+        virusLayer.style.display = 'none'; // 隐藏病毒层
+        virusLayer.innerHTML = ''; // 清空DOM
+        
+        document.getElementById('mambo-overlay').style.display = 'none'; // 关掉主弹窗
+        
+        // 恢复按钮状态 (下次还能玩)
+        const btn = document.getElementById('trap-btn');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        document.getElementById('mambo-phase-1').style.display = 'block';
+        
+        // 🔥 正式启动考试
+        startFinalTest();
+        
+    }, 3000);
+}
+// ==========================================
+// 7. 视频播放器逻辑 (Video Player)
+// ==========================================
+const video = document.getElementById('main-video');
+const playBtn = document.getElementById('v-play-btn');
+const seekbar = document.getElementById('video-seekbar');
+const timeDisplay = document.getElementById('v-time');
+
+// 播放/暂停切换
+window.togglePlay = function() {
+    if (video.paused) {
+        video.play();
+        playBtn.innerText = "⏸ 暂停";
+    } else {
+        video.pause();
+        playBtn.innerText = "▶ 播放";
+    }
 }
 
-.btn-yes { background: #B5EAD7; color: #2c2c2c; }
-.btn-no { background: #FF6B6B; color: #fff; }
-
-.btn-no:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #2c2c2c; }
-/* 注意：btn-yes 没有 hover 效果，因为它会消失 */
-.section-title { font-size: 1.5rem; border-left: 5px solid #FF6B6B; padding-left: 15px; margin-bottom: 10px; }
-.test-q-item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
-.test-q-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; line-height: 1.8; }
-.test-mc-label { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 4px; }
-.test-mc-label:hover { background: #f0f0f0; }
-.test-mc-label input { margin-right: 10px; transform: scale(1.2); }
-
-/* --- 关键修复：确保输入框层级高，可点击 --- */
-.test-cloze-input { 
-    border: none; border-bottom: 2px solid #2c2c2c; background: #fffdf5; 
-    width: 150px; padding: 2px 5px; text-align: center; font-size: 1rem; color: #333;
-    position: relative; z-index: 10; font-family: inherit;
-}
-.test-cloze-input:focus { border-bottom-color: #FF6B6B; outline: none; background: #fff; }
-
-.analysis-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-top: 10px; font-size: 0.95rem; color: #555; display: none; line-height: 1.6; }
-.correct-answer { color: #28a745; font-weight: bold; margin-left: 10px; }
-/* ===================== 🚑 紧急修复：选择题样式 & 答案隐藏 ===================== */
-
-/* 1. 修复卡片：加回波普积木风 (白底、黑框、硬阴影) */
-.quiz-card {
-    background-color: #fff !important; /* 强制白底 */
-    border: 3px solid #2c2c2c !important; /* 强制黑框 */
-    border-radius: 12px;
-    box-shadow: 6px 6px 0px #2c2c2c !important; /* 强制阴影 */
-    padding: 30px;
-    margin-bottom: 35px;
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
+// 跳跃时间 (+/- 15s)
+window.videoSkip = function(seconds) {
+    video.currentTime += seconds;
 }
 
-/* 2. 修复题目文字 */
-.quiz-question {
-    font-family: "Microsoft YaHei", sans-serif; /* 题目用黑体，清晰 */
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 20px;
-    line-height: 1.6;
+// 改变倍速
+window.changeSpeed = function(el) {
+    video.playbackRate = parseFloat(el.value);
 }
 
-/* 3. 修复选项按钮：悬浮效果 */
-.quiz-option {
-    background-color: #f9f9f9;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    padding: 12px 15px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.1s;
-    font-size: 1rem;
-    color: #555;
-    font-family: Arial, sans-serif; /* 选项字母用无衬线 */
+// 更新进度条和时间显示
+video.addEventListener('timeupdate', () => {
+    const current = video.currentTime;
+    const duration = video.duration || 0;
+    
+    // 更新滑块位置
+    seekbar.value = (current / duration) * 100;
+    
+    // 更新时间文字 00:00 / 00:00
+    timeDisplay.innerText = `${formatTime(current)} / ${formatTime(duration)}`;
+});
+
+// 拖动进度条
+seekbar.addEventListener('input', () => {
+    const time = (seekbar.value / 100) * video.duration;
+    video.currentTime = time;
+});
+
+// 格式化时间函数 (秒 -> mm:ss)
+function formatTime(s) {
+    const min = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
-.quiz-option:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
-    border-color: #2c2c2c;
-    color: #000;
-    background-color: #fff;
+// 视频加载元数据后初始化进度条
+video.addEventListener('loadedmetadata', () => {
+    timeDisplay.innerText = `00:00 / ${formatTime(video.duration)}`;
+});
+// --- 启动引擎 ---
+function startGravity() {
+    const gc = document.getElementById('gravity-canvas');
+    if (!gc) return console.error("找不到画布！");
+    const gctx = gc.getContext('2d');
+    
+    gWidth = gc.width = window.innerWidth - 260; 
+    gHeight = gc.height = window.innerHeight;
+    
+    // 初始化人物 (GRAVITY_CONFIG 见上一个回答的数据)
+    gNodes = GRAVITY_CONFIG.nodes.map(n => ({ 
+        ...n, x: Math.random() * gWidth, y: Math.random() * gHeight, vx: 0, vy: 0 
+    }));
+    
+    gLinks = GRAVITY_CONFIG.links.map(l => ({ 
+        source: gNodes.find(n => n.id === l.s), target: gNodes.find(n => n.id === l.t) 
+    }));
+
+    if (!gAnimationId) updateGravity();
 }
 
-/* 4. 选中状态：绿对红错 */
-.quiz-option.correct {
-    background-color: #B5EAD7 !important; /* 浅绿 */
-    border-color: #2c2c2c !important;
-    color: #000 !important;
-    font-weight: bold;
-    box-shadow: 2px 2px 0 #2c2c2c;
+// --- 核心渲染循环 (精准结构) ---
+function updateGravity() {
+    const gc = document.getElementById('gravity-canvas');
+    if (!gc) return;
+    const gctx = gc.getContext('2d');
+    
+    // 1. 清屏 (黑色半透明实现荧光拖尾)
+    gctx.fillStyle = "rgba(0, 0, 0, 0.2)"; 
+    gctx.fillRect(0, 0, gWidth, gHeight);
+
+    // 2. 物理碰撞与引力计算 (略, 保持之前的逻辑即可)
+    const damping = 0.9;
+
+    // 3. 绘制流水线
+    gNodes.forEach(n => {
+        // 更新位置
+        if (n !== gDraggingNode) {
+            n.vx *= damping; n.vy *= damping;
+            n.x += n.vx; n.y += n.vy;
+            if (n.x < n.r || n.x > gWidth - n.r) n.vx *= -1;
+            if (n.y < n.r || n.y > gHeight - n.r) n.vy *= -1;
+        }
+
+        // 悬停检测
+        const isHover = Math.sqrt((lastMouseX - n.x)**2 + (lastMouseY - n.y)**2) < n.r;
+        const r = isHover ? n.r * 1.3 : n.r;
+
+        // 绘制荧光 (Neon Glow)
+        const grad = gctx.createRadialGradient(n.x, n.y, r*0.2, n.x, n.y, r*1.5);
+        grad.addColorStop(0, n.color);
+        grad.addColorStop(1, "transparent");
+        
+        gctx.beginPath();
+        gctx.arc(n.x, n.y, r * 1.5, 0, Math.PI * 2);
+        gctx.fillStyle = grad;
+        gctx.fill();
+
+        // 绘制中心点
+        gctx.beginPath();
+        gctx.arc(n.x, n.y, r * 0.4, 0, Math.PI * 2);
+        gctx.fillStyle = "#fff";
+        gctx.fill();
+
+        // 绘制姓名 (常驻标签)
+        gctx.fillStyle = "#fff";
+        gctx.font = `bold ${isHover ? 18 : 14}px sans-serif`;
+        gctx.textAlign = "center";
+        gctx.fillText(n.id, n.x, n.y + r + 20);
+
+        if (isHover) {
+            gctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            gctx.fillText(n.desc, n.x, n.y - r - 20);
+        }
+    });
+
+    // 4. 递归申请下一帧
+    gAnimationId = requestAnimationFrame(updateGravity);
+}
+// ==========================================================================
+// 8. 荧光人物引力场 (升级版：虚拟摇杆 + 选中控制)
+// ==========================================================================
+
+// 全局变量
+let gSelectedId = "鲁迅"; // 默认选中鲁迅
+let gMoveInterval = null; // 摇杆定时器
+
+// --- A. 核心数据 ---
+const GRAVITY_CONFIG = {
+    nodes: [
+        { id: "鲁迅", color: "#FF6B6B", r: 45, desc: "清醒的观察者" }, // 波普红
+        { id: "阿长", color: "#FFDAC1", r: 35, desc: "神力的守护" },   // 奶黄
+        { id: "藤野", color: "#A0E7E5", r: 38, desc: "跨国界的严谨" }, // 蒂芙尼蓝
+        { id: "范爱农", color: "#B4F8C8", r: 32, desc: "落魄的傲骨" }, // 薄荷绿
+        { id: "父亲", color: "#FBE7C6", r: 32, desc: "威严与无奈" },   // 杏色
+        { id: "衍太太", color: "#E2F0CB", r: 28, desc: "口蜜腹剑" },   // 浅青
+        { id: "寿镜吾", color: "#FFAEBC", r: 30, desc: "方正质朴" },   // 浅粉
+        { id: "无常", color: "#FFFFFF", r: 30, desc: "阴间的公理" }    // 纯白
+    ],
+    links: [
+        { s: "鲁迅", t: "阿长" }, { s: "鲁迅", t: "藤野" },
+        { s: "鲁迅", t: "范爱农" }, { s: "鲁迅", t: "父亲" },
+        { s: "鲁迅", t: "衍太太" }, { s: "鲁迅", t: "寿镜吾" },
+        { s: "鲁迅", t: "无常" }, { s: "阿长", t: "鲁迅" }
+    ]
+};
+
+// --- B. 引擎启动 ---
+function startGravity() {
+    const gc = document.getElementById('gravity-canvas');
+    if (!gc) return;
+    const gctx = gc.getContext('2d');
+    
+    gWidth = gc.width = window.innerWidth; // 全屏铺满
+    gHeight = gc.height = window.innerHeight;
+    
+    // 初始化节点（如果已经有了就不重置，保持位置）
+    if(gNodes.length === 0) {
+        gNodes = GRAVITY_CONFIG.nodes.map(n => ({
+            ...n, 
+            x: Math.random() * (gWidth - 100) + 50, 
+            y: Math.random() * (gHeight - 100) + 50, 
+            vx: 0, vy: 0
+        }));
+        
+        gLinks = GRAVITY_CONFIG.links.map(l => ({
+            source: gNodes.find(n => n.id === l.s),
+            target: gNodes.find(n => n.id === l.t)
+        }));
+    }
+
+    if (!gAnimationId) updateGravity();
+    
+    // 事件监听
+    gc.addEventListener('mousedown', gOnDown);
+    gc.addEventListener('touchstart', gOnDown, {passive: false}); // 兼容手机触摸
+    window.addEventListener('mousemove', gOnMove);
+    window.addEventListener('touchmove', gOnMove, {passive: false});
+    window.addEventListener('mouseup', gOnUp);
+    window.addEventListener('touchend', gOnUp);
 }
 
-.quiz-option.wrong {
-    background-color: #FF6B6B !important; /* 浅红 */
-    border-color: #2c2c2c !important;
-    color: #fff !important;
-    box-shadow: 2px 2px 0 #2c2c2c;
+function stopGravity() {
+    if (gAnimationId) {
+        cancelAnimationFrame(gAnimationId);
+        gAnimationId = null;
+    }
 }
 
-/* 5. 🚨 核心修复：强制隐藏解析 */
-.quiz-explanation {
-    display: none !important; /* 默认绝不显示！ */
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #FFFDF5;
-    border: 2px dashed #2c2c2c;
-    border-radius: 8px;
-    color: #444;
-    font-size: 0.95rem;
-    line-height: 1.6;
+// --- C. 摇杆控制逻辑 ---
+window.startGMove = function(dx, dy) {
+    if(gMoveInterval) clearInterval(gMoveInterval);
+    const target = gNodes.find(n => n.id === gSelectedId);
+    if(!target) return;
+
+    // 持续施加力
+    gMoveInterval = setInterval(() => {
+        target.vx += dx * 2; // 施加推力
+        target.vy += dy * 2;
+    }, 20); // 每20ms推一下
 }
 
-/* 只有加了 show 类名才显示 */
-.quiz-explanation.show {
-    display: block !important;
-    animation: slide-down 0.3s ease-out;
+window.stopGMove = function() {
+    if(gMoveInterval) clearInterval(gMoveInterval);
 }
 
-@keyframes slide-down {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+// --- D. 渲染循环 ---
+function updateGravity() {
+    const gc = document.getElementById('gravity-canvas');
+    if (!gc) return;
+    const gctx = gc.getContext('2d');
+    
+    // 1. 背景：深色微透，制造光晕残留
+    gctx.fillStyle = "rgba(34, 34, 34, 0.3)"; 
+    gctx.fillRect(0, 0, gWidth, gHeight);
+
+    const k = 0.05; const repulsion = 8000; const damping = 0.9;
+
+    // 2. 物理计算 (同前)
+    for(let i=0; i<gNodes.length; i++){
+        for(let j=i+1; j<gNodes.length; j++){
+            const a = gNodes[i], b = gNodes[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            if(dist < 400) {
+                const force = repulsion / (dist * dist);
+                const fx = (dx/dist) * force, fy = (dy/dist) * force;
+                if(a !== gDraggingNode) { a.vx += fx; a.vy += fy; }
+                if(b !== gDraggingNode) { b.vx -= fx; b.vy -= fy; }
+            }
+        }
+    }
+    gLinks.forEach(l => {
+        const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const force = (dist - 200) * k; 
+        const fx = (dx/dist) * force, fy = (dy/dist) * force;
+        if(l.source !== gDraggingNode) { l.source.vx += fx; l.source.vy += fy; }
+        if(l.target !== gDraggingNode) { l.target.vx -= fx; l.target.vy -= fy; }
+    });
+
+    // 3. 绘制节点
+    gNodes.forEach(n => {
+        // 更新位置
+        if(n !== gDraggingNode) {
+            n.vx *= damping; n.vy *= damping;
+            n.x += n.vx; n.y += n.vy;
+            if(n.x < n.r) n.x = n.r; if(n.x > gWidth-n.r) n.x = gWidth-n.r;
+            if(n.y < n.r) n.y = n.r; if(n.y > gHeight-n.r) n.y = gHeight-n.r;
+        }
+
+        // 选中状态检测
+        const isSelected = (n.id === gSelectedId);
+
+        // A. 绘制选中光环 (CSS3 丝滑动画模拟：呼吸圈)
+        if(isSelected) {
+            const time = Date.now() / 300;
+            const ringR = n.r + 10 + Math.sin(time) * 3; // 呼吸效果
+            gctx.beginPath();
+            gctx.arc(n.x, n.y, ringR, 0, Math.PI * 2);
+            gctx.strokeStyle = "#fff";
+            gctx.lineWidth = 3;
+            gctx.setLineDash([5, 5]); // 虚线圈
+            gctx.stroke();
+            gctx.setLineDash([]); // 还原
+        }
+
+        // B. 绘制光球 (径向渐变)
+        const grad = gctx.createRadialGradient(n.x, n.y, n.r*0.2, n.x, n.y, n.r);
+        grad.addColorStop(0, n.color);
+        grad.addColorStop(1, "rgba(0,0,0,0)"); // 边缘透明
+        
+        gctx.beginPath();
+        gctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        gctx.fillStyle = grad;
+        gctx.fill();
+
+        // C. 实体核心
+        gctx.beginPath();
+        gctx.arc(n.x, n.y, n.r * 0.4, 0, Math.PI*2);
+        gctx.fillStyle = n.color; // 用自己的颜色，更清新
+        gctx.fill();
+        gctx.strokeStyle = "#fff";
+        gctx.lineWidth = 2;
+        gctx.stroke();
+
+        // D. 文字
+        gctx.fillStyle = "#fff";
+        gctx.font = `bold 14px "ZCOOL KuaiLe"`; // 强制快乐体
+        gctx.textAlign = "center";
+        gctx.fillText(n.id, n.x, n.y + n.r + 20);
+    });
+
+    gAnimationId = requestAnimationFrame(updateGravity);
 }
 
-/* 6. 重置按钮小箭头 */
-.reset-quiz-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 35px;
-    height: 35px;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    color: #ccc;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: 0.3s;
-}
-.reset-quiz-btn:hover {
-    border-color: #2c2c2c;
-    background-color: #FFDAC1;
-    color: #2c2c2c;
-    transform: rotate(180deg);
-}
-/* ===================== 新增：曼波病毒模式样式 ===================== */
+// --- E. 点击选中逻辑 ---
+function gOnDown(e) {
+    e.preventDefault(); // 防止手机端滚动
+    const gc = document.getElementById('gravity-canvas');
+    const rect = gc.getBoundingClientRect();
+    
+    // 兼容触摸和鼠标
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const mx = clientX - rect.left; 
+    const my = clientY - rect.top;
 
-/* 病毒容器：覆盖全屏，禁止滚动，确保表情包不撑破页面 */
-#mambo-virus-layer {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    z-index: 20000; /* 比普通弹窗更高 */
-    pointer-events: none; /* 让鼠标点不到 */
-    overflow: hidden;
-    display: none; /* 默认隐藏 */
-}
+    let clickedNode = null;
+    gNodes.forEach(n => {
+        const dist = Math.sqrt((mx-n.x)**2 + (my-n.y)**2);
+        if(dist < n.r + 10) clickedNode = n; // 增加一点点击范围
+    });
 
-/* 每一个疯狂弹出的表情包 */
-.mambo-virus-item {
-    position: absolute;
-    border: 3px solid #2c2c2c;
-    border-radius: 8px;
-    box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
-    animation: virus-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    object-fit: cover;
-    background: #fff; /* 防止透明图露馅 */
-}
-
-/* 弹出动画 */
-@keyframes virus-pop {
-    0% { transform: scale(0) rotate(0deg); opacity: 0; }
-    100% { transform: scale(1) rotate(var(--rot)); opacity: 1; }
-}
-/* ===================== 新增：视频播放器样式 ===================== */
-
-/* 电视机外框 */
-.video-tv-frame {
-    width: 100%;
-    max-width: 900px;
-    background-color: #333; /* 深灰外壳 */
-    padding: 20px;
-    border: 4px solid #2c2c2c;
-    border-radius: 20px;
-    box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-/* 屏幕区域 */
-.video-screen {
-    width: 100%;
-    aspect-ratio: 16/9;
-    background: #000;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 2px solid #555;
-    position: relative;
-}
-
-/* 控制栏区域 */
-.video-controls {
-    background-color: #f0f0f0;
-    border-radius: 10px;
-    padding: 15px;
-    border: 3px solid #2c2c2c;
-}
-
-/* 进度条 */
-.video-progress-box {
-    margin-bottom: 15px;
-}
-#video-seekbar {
-    cursor: pointer;
-    accent-color: #FF6B6B; /* 进度条颜色 */
-    height: 8px;
-}
-
-/* 按钮行布局 */
-.video-btn-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.left-btns {
-    display: flex;
-    gap: 10px;
-}
-
-.right-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-family: monospace;
-    font-size: 1.1rem;
-    font-weight: bold;
-}
-
-/* 播放器按钮样式 */
-.v-btn {
-    background: #fff;
-    border: 2px solid #2c2c2c;
-    border-radius: 8px;
-    padding: 5px 15px;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 3px 3px 0 #2c2c2c;
-    transition: 0.1s;
-}
-.v-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 #2c2c2c;
-}
-.play-btn {
-    background: #B5EAD7;
-    min-width: 80px;
-}
-
-/* 倍速下拉框 */
-#v-speed {
-    padding: 5px;
-    border: 2px solid #2c2c2c;
-    border-radius: 5px;
-    font-family: inherit;
-    font-weight: bold;
-    cursor: pointer;
-}
-/* ================= 用户登录系统样式 ================= */
-
-/* 1. 侧边栏的小卡片 */
-.user-card {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* 头像和文字的间距 */
-    background: #fff;
-    padding: 10px;
-    border-radius: 10px;
-    border: 3px solid #2c2c2c; /* 波普风黑边框 */
-    box-shadow: 4px 4px 0 #2c2c2c; /* 硬阴影 */
-    cursor: pointer;
-    transition: 0.2s;
-}
-.user-card:hover {
-    transform: translate(-2px, -2px); /* 悬浮效果 */
-    box-shadow: 6px 6px 0 #2c2c2c;
-}
-
-/* 头像圆圈 */
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid #2c2c2c;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-/* 昵称文字 */
-.user-name {
-    font-weight: bold;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* 名字太长显示省略号 */
-    max-width: 120px;
-}
-
-/* 退出按钮 */
-.logout-btn {
-    font-size: 0.75rem;
-    color: #FF6B6B;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0;
-}
-
-/* 2. 全屏遮罩层 (半透明黑底) */
-.auth-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 20000; /* 确保在最上层 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 3. 弹窗主体 */
-.auth-box {
-    width: 360px;
-    padding: 30px;
-    background: #FFFDF5;
-    position: relative; /* 为了放关闭按钮 */
-    text-align: center;
-}
-.auth-box h2 {
-    margin-bottom: 20px;
-    font-size: 1.8rem;
-    color: #2c2c2c;
-}
-
-/* 输入框组 */
-.input-group {
-    text-align: left;
-    margin-bottom: 15px;
-}
-.input-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-}
-.input-group input {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #2c2c2c;
-    border-radius: 6px;
-    font-family: inherit; /* 保持卡通字体 */
-    font-size: 1rem;
-    box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
-}
-
-/* 弹窗按钮 */
-.auth-btns {
-    display: flex;
-    gap: 15px;
-    margin-top: 25px;
-}
-.pop-btn {
-    flex: 1; /* 两个按钮平分宽度 */
-    padding: 12px;
-    border: 2px solid #2c2c2c;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 3px 3px 0 #2c2c2c;
-    transition: 0.1s;
-    font-family: inherit;
-    font-size: 1rem;
-}
-.pop-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 #2c2c2c;
-}
-.pop-btn.green { background: #B5EAD7; color: #2c2c2c; }
-.pop-btn.yellow { background: #FFDAC1; color: #2c2c2c; }
-
-/* 右上角关闭按钮 */
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
-    color: #999;
-}
-.close-btn:hover { color: #FF6B6B; }
-/* 顶部切换标签 */
-.auth-tabs {
-    display: flex; justify-content: center; gap: 40px;
-    margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;
-}
-.auth-tabs span { cursor: pointer; font-size: 1.1rem; color: #999; padding-bottom: 5px; }
-.auth-tabs .active-tab { color: #2c2c2c; font-weight: 900; border-bottom: 3px solid #FF6B6B; }
-
-/* 波普小按钮 (发送验证码专用) */
-.pop-btn-small {
-    padding: 8px 15px;
-    border: 2px solid #2c2c2c;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    cursor: pointer;
-    box-shadow: 3px 3px 0 #2c2c2c;
-    transition: 0.2s;
-    white-space: nowrap; /* 不换行 */
-}
-.pop-btn-small:hover {
-    transform: translate(-2px, -2px); /* 微微浮起 */
-    box-shadow: 5px 5px 0 #2c2c2c; /* 阴影变长 */
-}
-.pop-btn-small:disabled {
-    background: #ddd; color: #888; border-color: #999;
-    box-shadow: none; transform: none; cursor: not-allowed;
-}
-
-/* 下滑动画 */
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-#reg-code {
-    width: 100%;
-    /* 8位数字时，间距不能太大，5px-8px 比较合适 */
-    letter-spacing: 5px; 
-    /* 稍微缩小一点字号，确保在手机端也不会溢出 */
-    font-size: 1.1rem; 
-    padding: 12px 5px;
-    font-family: 'Courier New', Courier, monospace; /* 使用等宽字体让数字对齐更美观 */
+    if(clickedNode) {
+        gDraggingNode = clickedNode;
+        gSelectedId = clickedNode.id; // 更新选中ID
+        // 更新UI显示
+        document.getElementById('g-target-name').innerText = gSelectedId;
+        // 赋予一点随机速度，让点击有反馈
+        clickedNode.vx = (Math.random()-0.5)*5;
+        clickedNode.vy = (Math.random()-0.5)*5;
+    }
 }
