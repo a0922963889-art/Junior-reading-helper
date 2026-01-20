@@ -7,12 +7,84 @@
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
+<div id="auth-overlay" class="auth-overlay" style="display: none;">
+    <div class="auth-box block-style" style="width: 400px;">
+        <button class="close-btn" onclick="closeAuthModal()">×</button>
+        
+        <div class="auth-tabs">
+            <span id="tab-login" onclick="switchTab('login')" class="active-tab">登录</span>
+            <span id="tab-register" onclick="switchTab('register')">新用户注册</span>
+        </div>
+
+        <div id="panel-login">
+            <div class="input-group">
+                <label>QQ 邮箱</label>
+                <input type="email" id="login-email" placeholder="输入邮箱">
+            </div>
+            <div class="input-group">
+                <label>密码</label>
+                <input type="password" id="login-pass" placeholder="输入密码">
+            </div>
+            <button onclick="doLogin()" class="pop-btn green" style="width:100%; margin-top:20px;">进入悦读空间</button>
+        </div>
+
+        <div id="panel-register" style="display:none;">
+            
+            <div id="reg-step-1">
+                <div class="input-group">
+                    <label>1. 输入你的 QQ 邮箱</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="email" id="reg-email" placeholder="example@qq.com" style="flex:1;">
+                        <button id="btn-send-code" onclick="sendVerifyCode()" class="pop-btn-small yellow">
+                            发送验证码
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" id="group-code" style="display:none; margin-top:15px; animation: slideDown 0.3s;">
+                    <label style="color:#FF6B6B;">2. 查看邮箱并输入 8 位数字</label>
+                    <input type="text" id="reg-code" placeholder="********" maxlength="8" style="text-align:center; letter-spacing:5px; font-weight:bold; font-size:1.2rem;">
+                    <button onclick="verifyCodeAndNext()" class="pop-btn green" style="width:100%; margin-top:15px;">验证并下一步 ➡</button>
+                </div>
+            </div>
+
+            <div id="reg-step-2" style="display:none;">
+    <h3 style="color:#2c2c2c; margin-bottom:20px;">请进行您的账户设置</h3>
+    
+    <div class="input-group">
+        <label>创建一个用户名</label>
+        <input type="text" id="reg-nick" placeholder="username">
+    </div>
+
+    <div class="input-group">
+        <label>设置密码</label>
+        <input type="password" id="reg-pass-1" placeholder="至少6位">
+    </div>
+    <div class="input-group">
+        <label>确认密码</label>
+        <input type="password" id="reg-pass-2" placeholder="再输一次">
+    </div>
+
+    <button onclick="setUserInfoAndFinish()" class="pop-btn green" style="width:100%; margin-top:20px;">完成注册 🚀</button>
+</div>
+
+        </div>
+    </div>
+</div>
 <body>
 
     <canvas id="bgCanvas"></canvas>
 
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
+            <div id="sidebar-user-area" style="margin-bottom: 20px;">
+            <div class="user-card" onclick="openAuthModal()">
+                <div class="user-avatar" style="background:#eee; color:#999;">?</div>
+                <div class="user-info">
+                    <div class="user-name" style="color:#666">点击登录/注册</div>
+                </div>
+            </div>
+        </div>
             <span class="logo-text">📚 悦读空间</span>
         </div>
         <div class="menu-items">
@@ -205,7 +277,11 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="js/database.js"></script>
     <script src="js/script.js"></script>
+    
+    <script src="js/auth.js"></script>
 </body>
 </html>
