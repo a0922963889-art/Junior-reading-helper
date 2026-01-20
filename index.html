@@ -255,6 +255,33 @@
         </div>
 <div id="gravity-container" class="mindmap-body" style="display: none; background: #000;">
             <canvas id="gravity-canvas"></canvas>
+            <div id="trap-btn" class="menu-item block-style" onclick="triggerMamboTrap()" 
+     style="background: #FF6B6B; color: white; border-color: #2c2c2c; text-align: center; display: block; cursor: pointer; transition: 0.1s;">
+    <span style="font-size: 1.1rem;">🔥 全书综合训练</span>
+</div>
+
+<div id="gravity-container" class="mindmap-body" style="display: none; background: #222;">
+    <canvas id="gravity-canvas"></canvas>
+    
+    <div class="gravity-pad">
+        <div class="pad-header">当前控制：<span id="g-target-name" style="color:#B5EAD7;">鲁迅</span></div>
+        <div class="d-pad-grid">
+            <div></div>
+            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,-1)" onmousedown="startGMove(0,-1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▲</button>
+            <div></div>
+            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(-1,0)" onmousedown="startGMove(-1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">◀</button>
+            <div class="pad-center">●</div>
+            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(1,0)" onmousedown="startGMove(1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">▶</button>
+            <div></div>
+            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,1)" onmousedown="startGMove(0,1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▼</button>
+            <div></div>
+        </div>
+    </div>
+
+    <div class="map-controls-tip" style="top: 20px; bottom: auto; background: rgba(0,0,0,0.6); color: #fff; border: none;">
+        ⚛️ 点击光球切换控制 | 按住摇杆移动
+    </div>
+</div>
             <div class="map-controls-tip" style="background: rgba(0,0,0,0.5); color: #0ff; border: 1px solid #0ff; box-shadow: 0 0 10px #0ff;">
                 ⚛️ 拖拽荧光球体 | 感受物理引力
             </div>
