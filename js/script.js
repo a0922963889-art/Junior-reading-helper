@@ -27,14 +27,138 @@ const clozeView=document.getElementById('reader-content'), mindmapView=document.
 const chapterList=document.getElementById('chapter-list'), quizList=document.getElementById('quiz-list');
 const btnCloze=document.getElementById('btn-cloze'), btnMindmap=document.getElementById('btn-mindmap'), btnQuiz=document.getElementById('btn-quiz');
 
-window.openBook=function(id){
-    if(id!=='zhxs'){alert("敬请期待！");return;}
-    mainContent.style.display='none'; sidebar.style.display='none';
-    readerContainer.style.display='flex'; readerSidebar.style.display='block';
-    generateChapterList(); generateQuizList();
-    switchReaderMode('cloze'); loadZhxsContent();
-}
-window.closeBook=function(){ readerContainer.style.display='none'; readerSidebar.style.display='none'; mainContent.style.display='block'; sidebar.style.display='block'; }
+// ==========================================
+// 核心逻辑：书籍切换与内容加载
+// ==========================================
+
+let CURRENT_BOOK_ID = ''; // 全局变量：记录当前读的是哪本书
+
+// 1. 打开书籍的主函数
+window.openBook = function(id) {
+    const reader = document.getElementById('book-reader');
+    const sidebarTitle = document.getElementById('sidebar-book-title');
+    const mainContent = document.getElementById('main-content');
+    const sidebar = document.getElementById('sidebar');
+    const readerSidebar = document.getElementById('reader-sidebar');
+
+    // 更新全局状态
+    CURRENT_BOOK_ID = id;
+
+    // A. 界面初始化 (重置类名)
+    reader.className = 'reader-container'; 
+    
+    // B. 根据书籍 ID 切换标题和皮肤
+    if (id === 'zhxs') {
+        sidebarTitle.innerText = "朝花夕拾";
+        // 朝花夕拾用默认绿色，不需要加额外类名
+    } else if (id === 'xyj') {
+        sidebarTitle.innerText = "西游记 · 深度研读";
+        reader.classList.add('xyj-mode'); // 🔥 关键：添加天蓝色皮肤类名
+    } else {
+        return alert("📚 书籍正在上架中...");
+    }
+
+    // C. 视图切换：隐藏主页，显示阅读器
+    mainContent.style.display = 'none';
+    sidebar.style.display = 'none';
+    
+    reader.style.display = 'flex';
+    readerSidebar.style.display = 'block';
+
+    // D. 加载数据
+    generateChapterList(); // 生成侧边栏目录
+    switchReaderMode('cloze'); // 默认进入填空模式
+    loadBookContent(); // 🔥 加载具体的题目内容
+};
+
+// 2. 加载书籍内容 (填空题渲染引擎)
+// ================= 修正版：内容加载引擎 =================
+window.loadBookContent = function() {
+    const view = document.getElementById('reader-content');
+    view.innerHTML = ''; 
+    
+    // 自动判断使用哪个数据库
+    let targetData = [];
+    if (CURRENT_BOOK_ID === 'zhxs') targetData = (typeof ZHXS_DATA !== 'undefined') ? ZHXS_DATA : [];
+    if (CURRENT_BOOK_ID === 'xyj')  targetData = (typeof XYJ_DATA !== 'undefined') ? XYJ_DATA : [];
+
+    if (!targetData || targetData.length === 0) {
+        view.innerHTML = '<div style="padding:40px; text-align:center; color:#666;">⏳ 题库数据加载中...</div>';
+        return;
+    }
+
+    targetData.forEach((chapter, index) => {
+        const card = document.createElement('div');
+        card.className = 'sheet-card block-style';
+        card.id = `sheet-${index}`; 
+        
+        let html = `<h2 class="sheet-title">${chapter.title}</h2>`;
+        
+        if (chapter.cloze_questions) {
+            chapter.cloze_questions.forEach((q, i) => {
+                // 1. 智能序号逻辑：如果题目自带了数字开头(如"1. xxx")，JS就不再加序号，防止重复
+                // 这样《朝花夕拾》没序号的会自动加，《西游记》有序号的就不会重叠
+                const hasNumber = /^\d+[\.|、]/.test(q.q);
+                const prefix = hasNumber ? '' : `<span style="color:#2c2c2c; font-weight:bold; margin-right:8px;">${i+1}.</span>`;
+
+                // 2. 生成填空槽
+                const questionHtml = q.q.replace(/\{(.*?)\}/g, (match, p1) => {
+                    return `<span class="cloze-slot" onclick="toggleCloze(this)">${p1}</span>`;
+                });
+                
+                html += `
+                <div class="question-line" style="margin-bottom:15px; line-height:1.8; font-size:1.1rem;">
+                    ${prefix}${questionHtml}
+                </div>`;
+            });
+        }
+        
+        card.innerHTML = html;
+        view.appendChild(card);
+    });
+};
+
+// 3. 生成侧边栏目录
+window.generateChapterList = function() {
+    const list = document.getElementById('chapter-list');
+    list.innerHTML = '';
+    
+    let targetData = [];
+    if (CURRENT_BOOK_ID === 'zhxs') targetData = (typeof ZHXS_DATA !== 'undefined') ? ZHXS_DATA : [];
+    if (CURRENT_BOOK_ID === 'xyj')  targetData = (typeof XYJ_DATA !== 'undefined') ? XYJ_DATA : [];
+
+    targetData.forEach((c, i) => {
+        const el = document.createElement('div');
+        el.className = 'submenu-item';
+        el.innerText = c.menu_title || c.title;
+        el.onclick = () => {
+            switchReaderMode('cloze'); // 确保切回填空模式
+            // 平滑滚动到对应章节
+            document.getElementById(`sheet-${i}`)?.scrollIntoView({behavior:'smooth'});
+        };
+        list.appendChild(el);
+    });
+};
+
+// 4. 辅助：点击显示答案 (波普积木逻辑)
+window.toggleCloze = function(el) {
+    // 如果已经显示了，就不动了（或者你想做点击隐藏也可以 toggle）
+    if (!el.classList.contains('revealed')) {
+        el.classList.add('revealed');
+    }
+};
+
+// 5. 退出阅读器
+window.closeBook = function() {
+    document.getElementById('book-reader').style.display = 'none';
+    document.getElementById('reader-sidebar').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    document.getElementById('sidebar').style.display = 'flex'; // 恢复主侧边栏
+    
+    // 清除西游模式，防止污染主页
+    document.getElementById('book-reader').classList.remove('xyj-mode');
+};
+
 
 // 更新后的 switchReaderMode 函数
 window.switchReaderMode = function(mode){
