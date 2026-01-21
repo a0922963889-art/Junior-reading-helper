@@ -7,84 +7,112 @@
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<div id="auth-overlay" class="auth-overlay" style="display: none;">
-    <div class="auth-box block-style" style="width: 400px;">
-        <button class="close-btn" onclick="closeAuthModal()">×</button>
-        
-        <div class="auth-tabs">
-            <span id="tab-login" onclick="switchTab('login')" class="active-tab">登录</span>
-            <span id="tab-register" onclick="switchTab('register')">新用户注册</span>
-        </div>
+<body>
 
-        <div id="panel-login">
-            <div class="input-group">
-                <label>QQ 邮箱</label>
-                <input type="email" id="login-email" placeholder="输入邮箱">
-            </div>
-            <div class="input-group">
-                <label>密码</label>
-                <input type="password" id="login-pass" placeholder="输入密码">
-            </div>
-            <button onclick="doLogin()" class="pop-btn green" style="width:100%; margin-top:20px;">进入悦读空间</button>
-        </div>
-
-        <div id="panel-register" style="display:none;">
+    <div id="auth-overlay" class="auth-overlay" style="display: none;">
+        <div class="auth-box block-style" style="width: 400px;">
+            <button class="close-btn" onclick="closeAuthModal()">×</button>
             
-            <div id="reg-step-1">
+            <div class="auth-tabs">
+                <span id="tab-login" onclick="switchTab('login')" class="active-tab">登录</span>
+                <span id="tab-register" onclick="switchTab('register')">新用户注册</span>
+            </div>
+
+            <div id="panel-login">
                 <div class="input-group">
-                    <label>1. 输入你的 QQ 邮箱</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="email" id="reg-email" placeholder="example@qq.com" style="flex:1;">
-                        <button id="btn-send-code" onclick="sendVerifyCode()" class="pop-btn-small yellow">
-                            发送验证码
-                        </button>
+                    <label>QQ 邮箱</label>
+                    <input type="email" id="login-email" placeholder="输入邮箱">
+                </div>
+                <div class="input-group">
+                    <label>密码</label>
+                    <input type="password" id="login-pass" placeholder="输入密码">
+                </div>
+                <button onclick="doLogin()" class="pop-btn green" style="width:100%; margin-top:20px;">进入悦读空间</button>
+            </div>
+
+            <div id="panel-register" style="display:none;">
+                <div id="reg-step-1">
+                    <div class="input-group">
+                        <label>1. 输入你的 QQ 邮箱</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="email" id="reg-email" placeholder="example@qq.com" style="flex:1;">
+                            <button id="btn-send-code" onclick="sendVerifyCode()" class="pop-btn-small yellow">
+                                发送验证码
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group" id="group-code" style="display:none; margin-top:15px; animation: slideDown 0.3s;">
+                        <label style="color:#FF6B6B;">2. 查看邮箱并输入 8 位数字</label>
+                        <input type="text" id="reg-code" placeholder="********" maxlength="8" style="text-align:center; letter-spacing:5px; font-weight:bold; font-size:1.2rem;">
+                        <button onclick="verifyCodeAndNext()" class="pop-btn green" style="width:100%; margin-top:15px;">验证并下一步 ➡</button>
                     </div>
                 </div>
 
-                <div class="input-group" id="group-code" style="display:none; margin-top:15px; animation: slideDown 0.3s;">
-                    <label style="color:#FF6B6B;">2. 查看邮箱并输入 8 位数字</label>
-                    <input type="text" id="reg-code" placeholder="********" maxlength="8" style="text-align:center; letter-spacing:5px; font-weight:bold; font-size:1.2rem;">
-                    <button onclick="verifyCodeAndNext()" class="pop-btn green" style="width:100%; margin-top:15px;">验证并下一步 ➡</button>
+                <div id="reg-step-2" style="display:none;">
+                    <h3 style="color:#2c2c2c; margin-bottom:20px;">请进行您的账户设置</h3>
+                    
+                    <div class="input-group">
+                        <label>创建一个用户名</label>
+                        <input type="text" id="reg-nick" placeholder="username">
+                    </div>
+
+                    <div class="input-group">
+                        <label>设置密码</label>
+                        <input type="password" id="reg-pass-1" placeholder="至少6位">
+                    </div>
+                    <div class="input-group">
+                        <label>确认密码</label>
+                        <input type="password" id="reg-pass-2" placeholder="再输一次">
+                    </div>
+
+                    <button onclick="setUserInfoAndFinish()" class="pop-btn green" style="width:100%; margin-top:20px;">完成注册 🚀</button>
                 </div>
             </div>
-
-            <div id="reg-step-2" style="display:none;">
-    <h3 style="color:#2c2c2c; margin-bottom:20px;">请进行您的账户设置</h3>
-    
-    <div class="input-group">
-        <label>创建一个用户名</label>
-        <input type="text" id="reg-nick" placeholder="username">
-    </div>
-
-    <div class="input-group">
-        <label>设置密码</label>
-        <input type="password" id="reg-pass-1" placeholder="至少6位">
-    </div>
-    <div class="input-group">
-        <label>确认密码</label>
-        <input type="password" id="reg-pass-2" placeholder="再输一次">
-    </div>
-
-    <button onclick="setUserInfoAndFinish()" class="pop-btn green" style="width:100%; margin-top:20px;">完成注册 🚀</button>
-</div>
-
         </div>
     </div>
-</div>
-<body>
+
+    <div id="login-success-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 30000; justify-content: center; align-items: center;">
+        <div class="success-box block-style" style="background: #fff; padding: 30px 50px; border-radius: 20px; text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🎉</div>
+            <h2 style="color: #2c2c2c; margin-bottom: 5px;">欢迎回来!</h2>
+            <div id="welcome-name" style="font-size: 1.5rem; color: #FF6B6B; font-weight: bold;">书友</div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="auth-overlay" style="display: none; justify-content:center; align-items:center; z-index: 20001;">
+        <div class="auth-box block-style" style="width: 320px; padding: 25px; position: relative; background: #fff;">
+            <button class="close-btn" onclick="closeProfileModal()" style="position: absolute; right: 10px; top: 10px; font-size: 1.5rem; border: none; background: transparent; cursor: pointer;">×</button>
+            <h3 style="margin-bottom: 20px; color: #2c2c2c; text-align: center;">档案实验室</h3>
+            
+            <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 20px;">
+                <div id="profile-avatar-preview" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #2c2c2c; overflow: hidden; background: #B5EAD7; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 2rem;">?</span>
+                </div>
+                <label for="avatar-input" class="pop-btn-small" style="position: absolute; bottom: -5px; right: -10px; padding: 4px 8px; font-size: 0.8rem; background: #FFDAC1; border: 2px solid #2c2c2c; cursor: pointer; border-radius: 4px;">
+                    修改
+                </label>
+                <input type="file" id="avatar-input" hidden accept=".jpg,.jpeg">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">我的名号</label>
+                <input type="text" id="edit-username" placeholder="加载中..." style="width: 100%; padding: 8px; border: 2px solid #2c2c2c; border-radius: 4px;">
+            </div>
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">重置密码 (留空则不改)</label>
+                <input type="password" id="edit-password" placeholder="******" style="width: 100%; padding: 8px; border: 2px solid #2c2c2c; border-radius: 4px;">
+            </div>
+            
+            <p style="font-size: 0.7rem; color: #999; margin-bottom: 15px; text-align: center;">* 仅支持 JPG 格式图片</p>
+            <button onclick="saveProfileChanges()" class="pop-btn green" style="width: 100%; padding: 10px; background: #B5EAD7; border: 2px solid #2c2c2c; font-weight: bold; cursor: pointer;">同步记忆</button>
+        </div>
+    </div>
 
     <canvas id="bgCanvas"></canvas>
 
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div id="sidebar-user-area" style="margin-bottom: 20px;">
-            <div class="user-card" onclick="openAuthModal()">
-                <div class="user-avatar" style="background:#eee; color:#999;">?</div>
-                <div class="user-info">
-                    <div class="user-name" style="color:#666">点击登录/注册</div>
-                </div>
-            </div>
-        </div>
             <span class="logo-text">📚 悦读空间</span>
         </div>
         <div class="menu-items">
@@ -92,6 +120,8 @@
              <div class="menu-item block-style grade-8">八年级 <span class="arrow">▶</span></div>
              <div class="menu-item block-style grade-9">九年级 <span class="arrow">▶</span></div>
         </div>
+        <div id="sidebar-user-area">
+            </div>
     </nav>
 
     <nav class="sidebar" id="reader-sidebar" style="display: none; overflow-y: auto; max-height: 95vh;">
@@ -121,25 +151,24 @@
                 <div class="submenu" id="quiz-list" style="display: none;"></div>
             </div>
 
-            
-
             <div class="menu-group" style="margin-top: 15px;">
                 <div class="menu-item block-style" onclick="switchReaderMode('video')" id="btn-video" style="background: #a1c4fd;">
                     <span>🎬 视频精讲</span><span class="arrow">▶</span>
                 </div>
             </div>
+            
             <div class="menu-group" style="margin-top: 15px;">
                 <div class="menu-item block-style" onclick="switchReaderMode('gravity')" id="btn-gravity" style="background: #E0BBE4;">
                     <span>⚛️ 人物引力场</span><span class="arrow">●</span>
                 </div>
             </div>
-                <div style="font-size: 0.9rem; color: #FF6B6B; text-align: center; margin-bottom: 8px; font-weight: bold;">
-                    把所有题木看完了再点击我
-                </div>
-                <div id="trap-btn" class="menu-item block-style" onmouseenter="triggerMamboTrap()" 
-                     style="background: #FF6B6B; color: white; border-color: #2c2c2c; text-align: center; display: block; cursor: pointer; transition: 0.1s;">
-                    <span style="font-size: 1.1rem;">🔥 全书综合训练</span>
-                </div>
+            
+            <div style="font-size: 0.9rem; color: #FF6B6B; text-align: center; margin-bottom: 8px; font-weight: bold;">
+                把所有题目看完了再点击我
+            </div>
+            <div id="trap-btn" class="menu-item block-style" onclick="triggerMamboTrap()" 
+                 style="background: #FF6B6B; color: white; border-color: #2c2c2c; text-align: center; display: block; cursor: pointer; transition: 0.1s;">
+                <span style="font-size: 1.1rem;">🔥 全书综合训练</span>
             </div>
         </div>
     </nav>
@@ -159,10 +188,15 @@
                 </div>
                 <div class="book-title">《朝花夕拾》</div>
             </div>
-            <div class="book-card-wrapper">
-                <div class="book-cover block-style gray-cover" style="transform: rotate(-1.5deg);">+</div>
-                <div class="book-title" style="color:#999">敬请期待</div>
-            </div>
+            
+            <div class="book-card-wrapper" onclick="openBook('xyj')">
+    <div class="book-cover block-style" style="transform: rotate(-1.5deg);">
+        <img src="assets/covers/xyj.jpg" alt="西游记" 
+             style="width:100%; height:100%; object-fit:cover;"
+             onerror="this.style.display='none';this.parentNode.innerHTML='<div class=\'gray-cover\'>西游<br>记</div>'">
+    </div>
+    <div class="book-title">《西游记》</div>
+</div>
         </section>
     </main>
 
@@ -186,7 +220,6 @@
         </div>
 
         <div id="quiz-container" class="content-body" style="display: none;"></div>
-<div id="quiz-container" class="content-body" style="display: none;"></div>
 
         <div id="video-container" class="content-body" style="display: none; align-items: center;">
             <div class="video-tv-frame block-style">
@@ -219,11 +252,11 @@
                     </div>
                 </div>
             </div>
-            
             <div style="margin-top: 20px; color: #666; font-size: 0.9rem;">
                 💡 提示：按空格键也可以暂停/播放哦
             </div>
         </div>
+
         <div id="final-test-container" class="content-body" style="display: none; max-width: 1000px;">
             <div class="test-paper-header">
                 <h1>《朝花夕拾》综合测评</h1>
@@ -253,41 +286,32 @@
                 </div>
             </div>
         </div>
-<div id="gravity-container" class="mindmap-body" style="display: none; background: #000;">
+
+        <div id="gravity-container" class="mindmap-body" style="display: none; background: #222;">
             <canvas id="gravity-canvas"></canvas>
-            <div id="trap-btn" class="menu-item block-style" onclick="triggerMamboTrap()" 
-     style="background: #FF6B6B; color: white; border-color: #2c2c2c; text-align: center; display: block; cursor: pointer; transition: 0.1s;">
-    <span style="font-size: 1.1rem;">🔥 全书综合训练</span>
-</div>
+            
+            <div class="gravity-pad">
+                <div class="pad-header">当前控制：<span id="g-target-name" style="color:#B5EAD7;">鲁迅</span></div>
+                <div class="d-pad-grid">
+                    <div></div>
+                    <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,-1)" onmousedown="startGMove(0,-1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▲</button>
+                    <div></div>
+                    <button class="pop-btn-small pad-btn" ontouchstart="startGMove(-1,0)" onmousedown="startGMove(-1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">◀</button>
+                    <div class="pad-center">●</div>
+                    <button class="pop-btn-small pad-btn" ontouchstart="startGMove(1,0)" onmousedown="startGMove(1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">▶</button>
+                    <div></div>
+                    <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,1)" onmousedown="startGMove(0,1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▼</button>
+                    <div></div>
+                </div>
+            </div>
 
-<div id="gravity-container" class="mindmap-body" style="display: none; background: #222;">
-    <canvas id="gravity-canvas"></canvas>
-    
-    <div class="gravity-pad">
-        <div class="pad-header">当前控制：<span id="g-target-name" style="color:#B5EAD7;">鲁迅</span></div>
-        <div class="d-pad-grid">
-            <div></div>
-            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,-1)" onmousedown="startGMove(0,-1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▲</button>
-            <div></div>
-            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(-1,0)" onmousedown="startGMove(-1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">◀</button>
-            <div class="pad-center">●</div>
-            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(1,0)" onmousedown="startGMove(1,0)" ontouchend="stopGMove()" onmouseup="stopGMove()">▶</button>
-            <div></div>
-            <button class="pop-btn-small pad-btn" ontouchstart="startGMove(0,1)" onmousedown="startGMove(0,1)" ontouchend="stopGMove()" onmouseup="stopGMove()">▼</button>
-            <div></div>
-        </div>
-    </div>
-
-    <div class="map-controls-tip" style="top: 20px; bottom: auto; background: rgba(0,0,0,0.6); color: #fff; border: none;">
-        ⚛️ 点击光球切换控制 | 按住摇杆移动
-    </div>
-</div>
-            <div class="map-controls-tip" style="background: rgba(0,0,0,0.5); color: #0ff; border: 1px solid #0ff; box-shadow: 0 0 10px #0ff;">
-                ⚛️ 拖拽荧光球体 | 感受物理引力
+            <div class="map-controls-tip" style="top: 20px; bottom: auto; background: rgba(0,0,0,0.6); color: #fff; border: none;">
+                ⚛️ 点击光球切换控制 | 按住摇杆移动
             </div>
         </div>
     </div>
-<div id="mambo-overlay">
+
+    <div id="mambo-overlay">
         <div class="mambo-content">
             <div id="mambo-phase-1">
                 <img src="assets/mambo_ask.jpg" alt="曼波表情1" class="mambo-img" onerror="this.src='https://via.placeholder.com/200x200?text=Mambo+Face'">
@@ -304,11 +328,10 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="js/database.js"></script>
     <script src="js/script.js"></script>
-    
     <script src="js/auth.js"></script>
 </body>
 </html>
