@@ -294,8 +294,7 @@ window.submitFinalTest = function() {
 function triggerMamboTrap() {
     const btn = document.getElementById('trap-btn');
     const overlay = document.getElementById('mambo-overlay');
-    btn.style.opacity = '0';
-    btn.style.pointerEvents = 'none';
+    
     setTimeout(() => { overlay.style.display = 'flex'; }, 100);
 }
 
@@ -510,21 +509,24 @@ function updateGravity() {
     gAnimationId = requestAnimationFrame(updateGravity);
 }
 // ==========================================================================
-// 8. 荧光人物引力场 (Neon Character Gravity Engine)
+// 8. 荧光人物引力场 (升级版：虚拟摇杆 + 选中控制)
 // ==========================================================================
 
-// --- A. 核心数据配置 ---
-// 包含《朝花夕拾》中的核心人物及其特征描述
+// 全局变量
+let gSelectedId = "鲁迅"; // 默认选中鲁迅
+let gMoveInterval = null; // 摇杆定时器
+
+// --- A. 核心数据 ---
 const GRAVITY_CONFIG = {
     nodes: [
-        { id: "鲁迅", color: "#FF0055", r: 45, desc: "清醒的观察者与回忆者" },
-        { id: "阿长", color: "#FFE600", r: 35, desc: "卑微身份下包含着神力的守护" },
-        { id: "藤野", color: "#00CCFF", r: 38, desc: "跨越国界的严谨与博爱" },
-        { id: "范爱农", color: "#CC00FF", r: 32, desc: "黑暗时代落魄知识分子的悲歌" },
-        { id: "父亲", color: "#00FF66", r: 32, desc: "封建父权的威严与病榻的无奈" },
-        { id: "衍太太", color: "#AAAAAA", r: 28, desc: "口蜜腹剑的市侩与伪善" },
-        { id: "寿镜吾", color: "#FF9900", r: 30, desc: "极方正质朴博学的旧式恩师" },
-        { id: "无常", color: "#00FFFF", r: 30, desc: "阴间里最有公理的人情鬼" }
+        { id: "鲁迅", color: "#FF6B6B", r: 45, desc: "清醒的观察者" }, // 波普红
+        { id: "阿长", color: "#FFDAC1", r: 35, desc: "神力的守护" },   // 奶黄
+        { id: "藤野", color: "#A0E7E5", r: 38, desc: "跨国界的严谨" }, // 蒂芙尼蓝
+        { id: "范爱农", color: "#B4F8C8", r: 32, desc: "落魄的傲骨" }, // 薄荷绿
+        { id: "父亲", color: "#FBE7C6", r: 32, desc: "威严与无奈" },   // 杏色
+        { id: "衍太太", color: "#E2F0CB", r: 28, desc: "口蜜腹剑" },   // 浅青
+        { id: "寿镜吾", color: "#FFAEBC", r: 30, desc: "方正质朴" },   // 浅粉
+        { id: "无常", color: "#FFFFFF", r: 30, desc: "阴间的公理" }    // 纯白
     ],
     links: [
         { s: "鲁迅", t: "阿长" }, { s: "鲁迅", t: "藤野" },
@@ -534,40 +536,41 @@ const GRAVITY_CONFIG = {
     ]
 };
 
-// --- B. 引擎初始化与启动 ---
+// --- B. 引擎启动 ---
 function startGravity() {
     const gc = document.getElementById('gravity-canvas');
     if (!gc) return;
     const gctx = gc.getContext('2d');
     
-    // 动态适配画布大小（减去侧边栏宽度）
-    gWidth = gc.width = window.innerWidth - 260; 
+    gWidth = gc.width = window.innerWidth; // 全屏铺满
     gHeight = gc.height = window.innerHeight;
     
-    // 初始化节点位置与速度
-    gNodes = GRAVITY_CONFIG.nodes.map(n => ({
-        ...n, 
-        x: Math.random() * gWidth, 
-        y: Math.random() * gHeight, 
-        vx: 0, vy: 0
-    }));
-    
-    // 映射连线关系
-    gLinks = GRAVITY_CONFIG.links.map(l => ({
-        source: gNodes.find(n => n.id === l.s),
-        target: gNodes.find(n => n.id === l.t)
-    }));
+    // 初始化节点（如果已经有了就不重置，保持位置）
+    if(gNodes.length === 0) {
+        gNodes = GRAVITY_CONFIG.nodes.map(n => ({
+            ...n, 
+            x: Math.random() * (gWidth - 100) + 50, 
+            y: Math.random() * (gHeight - 100) + 50, 
+            vx: 0, vy: 0
+        }));
+        
+        gLinks = GRAVITY_CONFIG.links.map(l => ({
+            source: gNodes.find(n => n.id === l.s),
+            target: gNodes.find(n => n.id === l.t)
+        }));
+    }
 
-    // 启动动画循环
     if (!gAnimationId) updateGravity();
     
-    // 绑定交互事件
+    // 事件监听
     gc.addEventListener('mousedown', gOnDown);
+    gc.addEventListener('touchstart', gOnDown, {passive: false}); // 兼容手机触摸
     window.addEventListener('mousemove', gOnMove);
+    window.addEventListener('touchmove', gOnMove, {passive: false});
     window.addEventListener('mouseup', gOnUp);
+    window.addEventListener('touchend', gOnUp);
 }
 
-// 停止引擎（切换模式时调用，节省性能）
 function stopGravity() {
     if (gAnimationId) {
         cancelAnimationFrame(gAnimationId);
@@ -575,21 +578,36 @@ function stopGravity() {
     }
 }
 
-// --- C. 核心渲染与物理计算循环 ---
+// --- C. 摇杆控制逻辑 ---
+window.startGMove = function(dx, dy) {
+    if(gMoveInterval) clearInterval(gMoveInterval);
+    const target = gNodes.find(n => n.id === gSelectedId);
+    if(!target) return;
+
+    // 持续施加力
+    gMoveInterval = setInterval(() => {
+        target.vx += dx * 2; // 施加推力
+        target.vy += dy * 2;
+    }, 20); // 每20ms推一下
+}
+
+window.stopGMove = function() {
+    if(gMoveInterval) clearInterval(gMoveInterval);
+}
+
+// --- D. 渲染循环 ---
 function updateGravity() {
     const gc = document.getElementById('gravity-canvas');
     if (!gc) return;
     const gctx = gc.getContext('2d');
     
-    // 1. 绘制黑色背景并保留透明度，实现荧光拖尾效果
-    gctx.fillStyle = "rgba(0, 0, 0, 0.2)"; 
+    // 1. 背景：深色微透，制造光晕残留
+    gctx.fillStyle = "rgba(34, 34, 34, 0.3)"; 
     gctx.fillRect(0, 0, gWidth, gHeight);
 
-    const k = 0.05;         // 弹力系数
-    const repulsion = 8000; // 斥力系数
-    const damping = 0.9;    // 物理阻尼（摩擦力）
+    const k = 0.05; const repulsion = 8000; const damping = 0.9;
 
-    // 2. 物理计算：全员斥力
+    // 2. 物理计算 (同前)
     for(let i=0; i<gNodes.length; i++){
         for(let j=i+1; j<gNodes.length; j++){
             const a = gNodes[i], b = gNodes[j];
@@ -603,8 +621,6 @@ function updateGravity() {
             }
         }
     }
-
-    // 3. 物理计算：连线引力
     gLinks.forEach(l => {
         const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y;
         const dist = Math.sqrt(dx*dx + dy*dy) || 1;
@@ -614,78 +630,87 @@ function updateGravity() {
         if(l.target !== gDraggingNode) { l.target.vx -= fx; l.target.vy -= fy; }
     });
 
-    // 4. 渲染节点流水线
+    // 3. 绘制节点
     gNodes.forEach(n => {
-        // 更新位置（非拖拽状态）
+        // 更新位置
         if(n !== gDraggingNode) {
             n.vx *= damping; n.vy *= damping;
             n.x += n.vx; n.y += n.vy;
-            // 边界弹性反弹
-            if(n.x < n.r || n.x > gWidth - n.r) n.vx *= -1;
-            if(n.y < n.r || n.y > gHeight - n.r) n.vy *= -1;
+            if(n.x < n.r) n.x = n.r; if(n.x > gWidth-n.r) n.x = gWidth-n.r;
+            if(n.y < n.r) n.y = n.r; if(n.y > gHeight-n.r) n.y = gHeight-n.r;
         }
 
-        // 动态检测鼠标悬停
-        const distToMouse = Math.sqrt((lastMouseX - n.x)**2 + (lastMouseY - n.y)**2);
-        const isHover = distToMouse < n.r;
-        const displayR = isHover ? n.r * 1.3 : n.r;
+        // 选中状态检测
+        const isSelected = (n.id === gSelectedId);
 
-        // A. 绘制荧光光晕
-        const grad = gctx.createRadialGradient(n.x, n.y, displayR*0.2, n.x, n.y, displayR*1.5);
+        // A. 绘制选中光环 (CSS3 丝滑动画模拟：呼吸圈)
+        if(isSelected) {
+            const time = Date.now() / 300;
+            const ringR = n.r + 10 + Math.sin(time) * 3; // 呼吸效果
+            gctx.beginPath();
+            gctx.arc(n.x, n.y, ringR, 0, Math.PI * 2);
+            gctx.strokeStyle = "#fff";
+            gctx.lineWidth = 3;
+            gctx.setLineDash([5, 5]); // 虚线圈
+            gctx.stroke();
+            gctx.setLineDash([]); // 还原
+        }
+
+        // B. 绘制光球 (径向渐变)
+        const grad = gctx.createRadialGradient(n.x, n.y, n.r*0.2, n.x, n.y, n.r);
         grad.addColorStop(0, n.color);
-        grad.addColorStop(1, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(0,0,0,0)"); // 边缘透明
         
         gctx.beginPath();
-        gctx.arc(n.x, n.y, displayR*1.5, 0, Math.PI*2);
+        gctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
         gctx.fillStyle = grad;
         gctx.fill();
 
-        // B. 绘制核心球体
+        // C. 实体核心
         gctx.beginPath();
-        gctx.arc(n.x, n.y, displayR*0.4, 0, Math.PI*2);
-        gctx.fillStyle = "#fff";
+        gctx.arc(n.x, n.y, n.r * 0.4, 0, Math.PI*2);
+        gctx.fillStyle = n.color; // 用自己的颜色，更清新
         gctx.fill();
+        gctx.strokeStyle = "#fff";
+        gctx.lineWidth = 2;
+        gctx.stroke();
 
-        // C. 绘制姓名标签
+        // D. 文字
         gctx.fillStyle = "#fff";
-        gctx.font = `bold ${isHover ? 18 : 14}px sans-serif`;
+        gctx.font = `bold 14px "ZCOOL KuaiLe"`; // 强制快乐体
         gctx.textAlign = "center";
-        gctx.fillText(n.id, n.x, n.y + displayR + 25);
-
-        // D. 绘制人物灵魂描述（仅悬停显示）
-        if(isHover) {
-            gctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-            gctx.font = "14px sans-serif";
-            gctx.fillText(n.desc, n.x, n.y - displayR - 20);
-        }
+        gctx.fillText(n.id, n.x, n.y + n.r + 20);
     });
 
-    // 申请下一帧动画
     gAnimationId = requestAnimationFrame(updateGravity);
 }
 
-// --- D. 鼠标交互逻辑 ---
+// --- E. 点击选中逻辑 ---
 function gOnDown(e) {
-    const rect = document.getElementById('gravity-canvas').getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    e.preventDefault(); // 防止手机端滚动
+    const gc = document.getElementById('gravity-canvas');
+    const rect = gc.getBoundingClientRect();
+    
+    // 兼容触摸和鼠标
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const mx = clientX - rect.left; 
+    const my = clientY - rect.top;
+
+    let clickedNode = null;
     gNodes.forEach(n => {
         const dist = Math.sqrt((mx-n.x)**2 + (my-n.y)**2);
-        if(dist < n.r) gDraggingNode = n;
+        if(dist < n.r + 10) clickedNode = n; // 增加一点点击范围
     });
-}
 
-function gOnMove(e) {
-    const gc = document.getElementById('gravity-canvas');
-    if(!gc) return;
-    const rect = gc.getBoundingClientRect();
-    lastMouseX = e.clientX - rect.left;
-    lastMouseY = e.clientY - rect.top;
-
-    if(gDraggingNode) {
-        gDraggingNode.x = lastMouseX;
-        gDraggingNode.y = lastMouseY;
-        gDraggingNode.vx = 0; gDraggingNode.vy = 0;
+    if(clickedNode) {
+        gDraggingNode = clickedNode;
+        gSelectedId = clickedNode.id; // 更新选中ID
+        // 更新UI显示
+        document.getElementById('g-target-name').innerText = gSelectedId;
+        // 赋予一点随机速度，让点击有反馈
+        clickedNode.vx = (Math.random()-0.5)*5;
+        clickedNode.vy = (Math.random()-0.5)*5;
     }
 }
-
-function gOnUp() { gDraggingNode = null; }
