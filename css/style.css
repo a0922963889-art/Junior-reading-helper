@@ -691,3 +691,145 @@ body { font-family: var(--main-font); background-color: var(--bg-color); color: 
     color: #B5EAD7; /* 清新绿 */
     text-shadow: 2px 2px 0 #2c2c2c;
 }
+/* 登录成功弹窗动画 */
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.1); } /* 稍微放大一点，制造Q弹感 */
+    100% { transform: scale(1); opacity: 1; }
+}
+/* ================= 强制圆形头像 (终极版) ================= */
+.user-avatar {
+    width: 45px !important;
+    height: 45px !important;
+    min-width: 45px !important;
+    min-height: 45px !important;
+    flex-shrink: 0 !important; /* 核心：禁止挤压 */
+    
+    border-radius: 50% !important;
+    border: 2px solid #2c2c2c !important;
+    overflow: hidden !important;
+    
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 12px !important;
+}
+
+/* 让里面的图片绝对铺满 */
+.user-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+/* ================= 侧边栏布局重构 ================= */
+#sidebar {
+    display: flex;
+    flex-direction: column; /* 让内部元素竖着排 */
+    padding-bottom: 20px;   /* 底部留点空隙 */
+}
+
+.menu-items {
+    flex-grow: 1; /* 让菜单占据中间所有空余空间，把用户区顶到底部 */
+}
+
+/* ================= 底部用户卡片 (大号波普风) ================= */
+/* 覆盖之前的样式，不再用那种小卡片了 */
+#sidebar-user-area {
+    width: 100%;
+    margin-top: auto; /* 核心：自动推到最下面 */
+}
+
+.user-dock {
+    background: #fff;
+    border: 3px solid #2c2c2c;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 6px 6px 0 #2c2c2c;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.user-dock:hover {
+    transform: translateY(-3px);
+    box-shadow: 8px 8px 0 #2c2c2c;
+}
+
+/* 顶部：头像和名字 */
+.dock-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed #eee;
+}
+
+.dock-name {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #2c2c2c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px;
+}
+
+/* 底部：操作按钮行 */
+.dock-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 两个大按钮 */
+.dock-btn {
+    flex: 1; /* 两个按钮平分宽度 */
+    padding: 8px 0;
+    border: 2px solid #2c2c2c;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    background: #FFFDF5;
+    color: #2c2c2c;
+    transition: 0.1s;
+    text-align: center;
+}
+
+.dock-btn:hover {
+    background: #FFDAC1; /* 悬浮变奶黄色 */
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 #2c2c2c;
+}
+
+.dock-btn.logout {
+    color: #FF6B6B; /* 退出按钮文字红色 */
+}
+/* ================= 西游记专属特效 (天空之城版) ================= */
+
+/* 1. 阅读器激活西游记模式时的侧边栏高亮 */
+.reader-container.xyj-mode .active-mode {
+    background: #E1F5FE !important; /* 极淡的蓝 */
+    border-color: #03A9F4 !important; /* 亮蓝边框 */
+    color: #0277BD !important;
+}
+
+/* 2. 答案揭晓时的积木块特效 (天蓝色) */
+.reader-container.xyj-mode .cloze-slot.revealed {
+    background: #29B6F6 !important; /* 鲜艳的天蓝色 */
+    color: #fff !important;         /* 纯白文字，对比强烈 */
+    border: 3px solid #2c2c2c !important; /* 保持波普黑边 */
+    box-shadow: 4px 4px 0 #0277BD !important; /* 深蓝阴影，制造立体感 */
+    transform: rotate(-2deg) scale(1.1); /* 积木歪斜效果 */
+    font-family: 'ZCOOL KuaiLe', cursive; /* 强制快乐体 */
+    padding: 2px 8px;
+    border-radius: 4px;
+    animation: popInBlue 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 3. 专属弹跳动画 */
+@keyframes popInBlue {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    80% { transform: scale(1.2) rotate(-5deg); }
+    100% { transform: scale(1.1) rotate(-2deg); opacity: 1; }
+}
