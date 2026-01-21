@@ -805,31 +805,68 @@ body { font-family: var(--main-font); background-color: var(--bg-color); color: 
 .dock-btn.logout {
     color: #FF6B6B; /* 退出按钮文字红色 */
 }
-/* ================= 西游记专属特效 (天空之城版) ================= */
+/* =========================================================
+   核心修复：波普积木统一物理引擎 (防剧透版)
+   ========================================================= */
 
-/* 1. 阅读器激活西游记模式时的侧边栏高亮 */
-.reader-container.xyj-mode .active-mode {
-    background: #E1F5FE !important; /* 极淡的蓝 */
-    border-color: #03A9F4 !important; /* 亮蓝边框 */
-    color: #0277BD !important;
+/* 1. 基础物理属性 (未揭晓状态) */
+.cloze-slot {
+    /* 核心外观：只有下划线，没有文字 */
+    border-bottom: 2.5px solid #2c2c2c; /* 加粗一点下划线，更明显 */
+    padding: 0 5px;
+    cursor: pointer;
+    
+    /* 🔥 绝对隐藏文字的魔法 */
+    color: transparent !important; 
+    text-shadow: none !important; /* 关键！删掉了之前的黑色阴影，防止文字泄露 */
+    
+    /* 布局与动画 */
+    display: inline-block; 
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    min-width: 20px; /* 保证空答案也有长度供点击 */
 }
 
-/* 2. 答案揭晓时的积木块特效 (天蓝色) */
-.reader-container.xyj-mode .cloze-slot.revealed {
-    background: #29B6F6 !important; /* 鲜艳的天蓝色 */
-    color: #fff !important;         /* 纯白文字，对比强烈 */
-    border: 3px solid #2c2c2c !important; /* 保持波普黑边 */
-    box-shadow: 4px 4px 0 #0277BD !important; /* 深蓝阴影，制造立体感 */
-    transform: rotate(-2deg) scale(1.1); /* 积木歪斜效果 */
-    font-family: 'ZCOOL KuaiLe', cursive; /* 强制快乐体 */
+/* 悬停时的微交互：下划线变色，提示可点击 */
+.cloze-slot:hover {
+    border-bottom-color: #FF6B6B;
+}
+
+/* 2. 揭晓状态 (通用/朝花夕拾 - 绿色) */
+.cloze-slot.revealed {
+    /* 文字显形 */
+    color: #2c2c2c !important; 
+    text-shadow: none;
+    
+    /* 积木外观 */
+    background: #B5EAD7; 
+    border: 2px solid #2c2c2c; 
+    border-radius: 5px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    
+    /* Q弹动画状态 */
+    transform: scale(1.1) rotate(-2deg); 
     padding: 2px 8px;
-    border-radius: 4px;
-    animation: popInBlue 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin: 0 2px;
 }
 
-/* 3. 专属弹跳动画 */
-@keyframes popInBlue {
-    0% { transform: scale(0) rotate(0deg); opacity: 0; }
-    80% { transform: scale(1.2) rotate(-5deg); }
-    100% { transform: scale(1.1) rotate(-2deg); opacity: 1; }
+/* 3. 西游记专属覆写 (天蓝色) */
+.reader-container.xyj-mode .cloze-slot.revealed {
+    /* 背景变天蓝 */
+    background: #29B6F6 !important; 
+    /* 文字变白，对比更强 */
+    color: #fff !important; 
+    
+    /* 阴影变深蓝 */
+    box-shadow: 3px 3px 0 #0277BD !important;
+    
+    /* 物理形态保持一致 */
+    transform: scale(1.1) rotate(-2deg); 
+    border: 2px solid #2c2c2c !important;
+}
+
+/* 4. 侧边栏高亮适配 */
+.reader-container.xyj-mode .active-mode {
+    background: #E1F5FE !important;
+    border-color: #03A9F4 !important;
+    color: #0277BD !important;
 }
